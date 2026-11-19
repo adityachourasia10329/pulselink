@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: #0F372B;
+  color: #EFE7DA;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #09241C;
+}
+::-webkit-scrollbar-thumb {
+  background: #164A3B;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2A7A63;
+}
+
+/* Leaflet Dark & Bottle-Green custom styling */
+.leaflet-container {
+  background-color: #09241C !important;
+  font-family: inherit;
+}
+
+.dark-tiles {
+  filter: invert(100%) hue-rotate(140deg) brightness(85%) contrast(90%) saturate(85%);
+}
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #09241C !important;
+  color: #EFE7DA !important;
+  border: 1px solid #164A3B !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 8px !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+  line-height: 1.4 !important;
+}
+
+/* Card Glow Utilities */
+.glass-panel {
+  background-color: rgba(9, 36, 28, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(22, 74, 59, 0.7);
+}
+
+.glass-panel-elevated {
+  background-color: rgba(22, 74, 59, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(239, 231, 218, 0.15);
+}
+
+/* Pulse Animation for Critical States */
+@keyframes heartPulse {
+  0% { transform: scale(1); }
+  14% { transform: scale(1.15); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.15); }
+  70% { transform: scale(1); }
+}
+
+.animate-heart-pulse {
+  animation: heartPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes sirenFlash {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(230, 59, 46, 0.8), inset 0 0 15px rgba(230, 59, 46, 0.4);
+    border-color: #E63B2E;
+  }
+  50% {
+    box-shadow: 0 0 6px rgba(230, 59, 46, 0.2);
+    border-color: rgba(230, 59, 46, 0.3);
+  }
+}
+
+.animate-siren {
+  animation: sirenFlash 1s infinite;
+}
