@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePulseLink } from '../../context/PulseLinkContext';
-import type { UserCategory, PurposeOfVisit } from '../../types';
+import type { UserCategory, PurposeOfVisit, VerificationUserData } from '../../types';
 import { 
   ChevronRight, 
   ShieldCheck, 
@@ -11,7 +11,10 @@ import {
   Mail, 
   MapPin, 
   Phone,
-  Sparkles
+  Sparkles,
+  Zap,
+  RotateCcw,
+  ClipboardList
 } from 'lucide-react';
 
 export const VerificationGatePage: React.FC = () => {
@@ -22,32 +25,107 @@ export const VerificationGatePage: React.FC = () => {
     setActiveTab 
   } = usePulseLink();
 
-  const [fullName, setFullName] = useState(verificationUser?.fullName || 'aditya chourasia');
-  const [workOrganisation, setWorkOrganisation] = useState(verificationUser?.workOrganisation || 'cafe');
-  const [email, setEmail] = useState(verificationUser?.email || 'aditya.chourasia10329@gmail.com');
-  const [city, setCity] = useState(verificationUser?.city || 'Bengaluru');
-  const [phone, setPhone] = useState(verificationUser?.phoneWhatsapp || '9313264332');
-  const [userCategory, setUserCategory] = useState<UserCategory>(verificationUser?.userCategory || 'medical_staff');
-  const [purposeOfVisit, setPurposeOfVisit] = useState<PurposeOfVisit>(verificationUser?.purposeOfVisit || 'requesting');
+  // Load initial state from localStorage or context verificationUser for fast filing
+  const getInitialState = (): VerificationUserData => {
+    try {
+      const saved = localStorage.getItem('pulselink_verification_gate');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return (
+      verificationUser || {
+        fullName: 'aditya chourasia',
+        email: 'aditya.chourasia10329@gmail.com',
+        workOrganisation: 'cafe',
+        city: 'Bengaluru',
+        userCategory: 'medical_staff',
+        purposeOfVisit: 'requesting',
+        phoneWhatsapp: '9313264332',
+        queryRequirements: 'printing on 150 ml cups',
+        verifiedAt: new Date().toISOString()
+      }
+    );
+  };
+
+  const initial = getInitialState();
+
+  const [fullName, setFullName] = useState(initial.fullName || 'aditya chourasia');
+  const [workOrganisation, setWorkOrganisation] = useState(initial.workOrganisation || 'cafe');
+  const [email, setEmail] = useState(initial.email || 'aditya.chourasia10329@gmail.com');
+  const [city, setCity] = useState(initial.city || 'Bengaluru');
+  const [phone, setPhone] = useState(initial.phoneWhatsapp || '9313264332');
+  const [userCategory, setUserCategory] = useState<UserCategory>(initial.userCategory || 'medical_staff');
+  const [purposeOfVisit, setPurposeOfVisit] = useState<PurposeOfVisit>(initial.purposeOfVisit || 'requesting');
+  const [queryRequirements, setQueryRequirements] = useState(initial.queryRequirements || 'printing on 150 ml cups');
 
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
+  // Automatically save details and choices on change so every time the site is opened or reloaded they are preserved
+  useEffect(() => {
+    const currentData: VerificationUserData = {
+      fullName,
+      email,
+      workOrganisation,
+      city,
+      phoneWhatsapp: phone,
+      userCategory,
+      purposeOfVisit,
+      queryRequirements,
+      verifiedAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem('pulselink_verification_gate', JSON.stringify(currentData));
+    } catch {
+      // ignore
+    }
+  }, [fullName, email, workOrganisation, city, phone, userCategory, purposeOfVisit, queryRequirements]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submitVerification({
-      fullName: fullName.trim() || 'Aditya Chourasia',
+    const submissionData: VerificationUserData = {
+      fullName: fullName.trim() || 'aditya chourasia',
       email: email.trim() || 'aditya.chourasia10329@gmail.com',
-      workOrganisation: workOrganisation.trim() || 'Hospital Network',
+      workOrganisation: workOrganisation.trim() || 'cafe',
       city: city.trim() || 'Bengaluru',
       userCategory,
       purposeOfVisit,
-      phoneWhatsapp: phone.trim()
-    });
+      phoneWhatsapp: phone.trim() || '9313264332',
+      queryRequirements: queryRequirements.trim(),
+      verifiedAt: new Date().toISOString()
+    };
+
+    submitVerification(submissionData);
     setSubmittedSuccess(true);
     setTimeout(() => {
       setViewMode('dashboard');
       setActiveTab('corridors');
-    }, 600);
+    }, 450);
+  };
+
+  const handleResetDefaults = () => {
+    const defaultData: VerificationUserData = {
+      fullName: 'aditya chourasia',
+      email: 'aditya.chourasia10329@gmail.com',
+      workOrganisation: 'cafe',
+      city: 'Bengaluru',
+      phoneWhatsapp: '9313264332',
+      userCategory: 'medical_staff',
+      purposeOfVisit: 'requesting',
+      queryRequirements: 'printing on 150 ml cups',
+      verifiedAt: new Date().toISOString()
+    };
+    setFullName(defaultData.fullName);
+    setWorkOrganisation(defaultData.workOrganisation);
+    setEmail(defaultData.email);
+    setCity(defaultData.city);
+    setPhone(defaultData.phoneWhatsapp || '');
+    setUserCategory(defaultData.userCategory);
+    setPurposeOfVisit(defaultData.purposeOfVisit);
+    setQueryRequirements(defaultData.queryRequirements || '');
   };
 
   const handleQuickFill = (role: 'aditya_cafe' | 'doctor' | 'police' | 'patient') => {
@@ -59,6 +137,7 @@ export const VerificationGatePage: React.FC = () => {
       setPhone('9313264332');
       setUserCategory('medical_staff');
       setPurposeOfVisit('requesting');
+      setQueryRequirements('printing on 150 ml cups');
     } else if (role === 'doctor') {
       setFullName('Dr. Ananya Rao, M.S.');
       setEmail('ananya.rao@manipal.edu');
@@ -67,6 +146,7 @@ export const VerificationGatePage: React.FC = () => {
       setPhone('+91 98860 12345');
       setUserCategory('medical_staff');
       setPurposeOfVisit('requesting');
+      setQueryRequirements('Emergency heart cold-chain ischemia transport window < 60m');
     } else if (role === 'police') {
       setFullName('Insp. S. Vijay Kumar');
       setEmail('traffic.dispatch@ksp.gov.in');
@@ -75,6 +155,7 @@ export const VerificationGatePage: React.FC = () => {
       setPhone('+91 94490 88765');
       setUserCategory('gov_employee');
       setPurposeOfVisit('responding');
+      setQueryRequirements('Green corridor arterial signal preemption & route clearance');
     } else {
       setFullName('Rajesh & Priya Sharma');
       setEmail('priya.sharma99@gmail.com');
@@ -83,6 +164,7 @@ export const VerificationGatePage: React.FC = () => {
       setPhone('+91 98450 44321');
       setUserCategory('patient_family');
       setPurposeOfVisit('inquiry');
+      setQueryRequirements('Liver donor recipient queue priority & MELD score status');
     }
   };
 
@@ -96,16 +178,35 @@ export const VerificationGatePage: React.FC = () => {
         <div className="flex justify-center">
           <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-bottle-950/90 border border-bottle-700 shadow-sm text-xs font-mono text-bone-200">
             <span className="w-2 h-2 rounded-full bg-sage animate-pulse" />
-            <span className="font-medium text-bone-100">{fullName || 'aditya chourasia'} ({workOrganisation || 'manipal hospitals'})</span>
+            <span className="font-medium text-bone-100">{fullName || 'aditya chourasia'} ({workOrganisation || 'cafe'})</span>
             <ChevronRight className="w-3.5 h-3.5 text-bone-300" />
           </div>
+        </div>
+
+        {/* Saved Fast-Filing Notification Banner */}
+        <div className="bg-bottle-950/80 border border-sage/30 rounded-xl px-3.5 py-2 flex items-center justify-between text-xs shadow-inner">
+          <div className="flex items-center space-x-2 text-sage">
+            <Zap className="w-3.5 h-3.5 text-sage shrink-0" />
+            <span className="font-mono text-[11px] text-bone-200">
+              Details &amp; choices auto-saved for fast filing on every visit &amp; reload
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleResetDefaults}
+            title="Reset form fields to default"
+            className="flex items-center space-x-1 text-[11px] text-bone-400 hover:text-bone-200 font-mono transition-colors ml-2 shrink-0"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Reset</span>
+          </button>
         </div>
 
         {/* Quick-Fill Pill Bar for Convenience */}
         <div className="bg-bottle-900/60 border border-bottle-700/60 rounded-xl p-2.5 flex items-center justify-between text-xs">
           <span className="font-mono text-[11px] text-bone-400 flex items-center space-x-1 pl-1">
             <Sparkles className="w-3 h-3 text-cobalt" />
-            <span>Quick Fill Presets:</span>
+            <span>Quick Presets:</span>
           </span>
           <div className="flex flex-wrap gap-1.5">
             <button
@@ -160,7 +261,7 @@ export const VerificationGatePage: React.FC = () => {
             <div className="flex items-center justify-between text-xs">
               <label htmlFor="workOrg" className="font-medium text-bone-200 flex items-center space-x-1.5">
                 <Building2 className="w-3.5 h-3.5 text-bone-400" />
-                <span>Type of Business / Work Organisation</span>
+                <span>Type of Business</span>
               </label>
               <span className="text-amber font-semibold text-[11px]">* Required</span>
             </div>
@@ -170,7 +271,7 @@ export const VerificationGatePage: React.FC = () => {
               required
               value={workOrganisation}
               onChange={(e) => setWorkOrganisation(e.target.value)}
-              placeholder="e.g. cafe, Manipal Hospital, Blood Bank"
+              placeholder="e.g. cafe"
               className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
             />
           </div>
@@ -235,7 +336,7 @@ export const VerificationGatePage: React.FC = () => {
             />
           </div>
 
-          {/* QUESTION (e) - styled as screenshot 3 pill options */}
+          {/* QUESTION (e) - Are you (patient / medical staff / Gov employee / other) */}
           <div className="space-y-2 pt-2 border-t border-bottle-700/60">
             <div className="flex items-center justify-between text-xs">
               <label className="font-medium text-bone-100 text-sm">
@@ -270,7 +371,7 @@ export const VerificationGatePage: React.FC = () => {
             </div>
           </div>
 
-          {/* QUESTION (f) - styled as screenshot 3 pill options */}
+          {/* QUESTION (f) - Purpose of visit */}
           <div className="space-y-2 pt-2 border-t border-bottle-700/60">
             <div className="flex items-center justify-between text-xs">
               <label className="font-medium text-bone-100 text-sm">
@@ -304,6 +405,26 @@ export const VerificationGatePage: React.FC = () => {
                 );
               })}
             </div>
+          </div>
+
+          {/* Field: Your Query / Estimated Requirements (Matches Screenshot 1) */}
+          <div className="space-y-1.5 pt-2 border-t border-bottle-700/60">
+            <div className="flex items-center justify-between text-xs">
+              <label htmlFor="queryRequirements" className="font-medium text-bone-200 flex items-center space-x-1.5">
+                <ClipboardList className="w-3.5 h-3.5 text-bone-400" />
+                <span>Your Query / Estimated Requirements</span>
+              </label>
+              <span className="text-amber font-semibold text-[11px]">* Required</span>
+            </div>
+            <textarea
+              id="queryRequirements"
+              rows={2}
+              required
+              value={queryRequirements}
+              onChange={(e) => setQueryRequirements(e.target.value)}
+              placeholder="e.g. printing on 150 ml cups"
+              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-2.5 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans resize-none"
+            />
           </div>
 
           {/* Submit Button */}

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { usePulseLink } from '../context/PulseLinkContext';
-import { 
-  ChevronDown, 
-  User, 
-  Clock, 
+import {
+  ChevronDown,
+  User,
+  Clock,
   Flame,
   LayoutDashboard,
   Home,
@@ -19,16 +19,16 @@ import {
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { 
-    viewMode, 
-    setViewMode, 
+  const {
+    viewMode,
+    setViewMode,
     activeTab,
     setActiveTab,
     activeSubFocus,
     setActiveSubFocus,
-    currentRole, 
-    setCurrentRole, 
-    currentUser, 
+    currentRole,
+    setCurrentRole,
+    currentUser,
     allProfiles,
     selectedCity,
     setSelectedCity,
@@ -49,7 +49,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-bottle-900/95 backdrop-blur-md border-b border-bottle-700/80 transition-all">
-      
+
       {/* 7) Continuous Right-to-Left News Headline Ticker */}
       <div className="bg-cobalt text-white text-xs font-mono font-medium py-1 px-4 overflow-hidden shadow-sm border-b border-cobalt-dark flex items-center relative select-none">
         <div className="animate-headline-ticker inline-flex items-center space-x-12">
@@ -93,10 +93,10 @@ export const Navbar: React.FC = () => {
       {/* Main Bar - Full width edge-to-edge pushing PulseLink to top-left corner */}
       <div className="w-full px-3 sm:px-5 lg:px-6">
         <div className="flex items-center justify-between h-14">
-          
+
           {/* Left Top Corner: PulseLink Logo & Medical Pulse Wave Symbol */}
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
-            <button 
+            <button
               onClick={() => setViewMode('landing')}
               className="flex items-center space-x-1.5 text-left group focus:outline-none"
               title="PulseLink Overview"
@@ -121,7 +121,7 @@ export const Navbar: React.FC = () => {
 
               {/* City Dropdown Menu */}
               {cityDropdownOpen && (
-                <div 
+                <div
                   className="absolute left-0 mt-2 w-72 sm:w-80 bg-bottle-900 border border-bottle-600 rounded-xl shadow-2xl py-2 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
                   onClick={e => e.stopPropagation()}
                 >
@@ -144,11 +144,10 @@ export const Navbar: React.FC = () => {
                             setSelectedCity(city);
                             setCityDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-3.5 py-2.5 flex items-start space-x-3 transition-colors ${
-                            isSelected 
-                              ? 'bg-bottle-700/70 text-bone-100 border-l-2 border-cobalt' 
-                              : 'hover:bg-bottle-800/80 text-bone-300 hover:text-bone-100'
-                          }`}
+                          className={`w-full text-left px-3.5 py-2.5 flex items-start space-x-3 transition-colors ${isSelected
+                            ? 'bg-bottle-700/70 text-bone-100 border-l-2 border-cobalt'
+                            : 'hover:bg-bottle-800/80 text-bone-300 hover:text-bone-100'
+                            }`}
                         >
                           <div className="mt-0.5">
                             {isSelected ? (
@@ -185,11 +184,10 @@ export const Navbar: React.FC = () => {
             <button
               onClick={() => setViewMode(viewMode === 'login' ? 'dashboard' : 'login')}
               title="Click to manage clinical verification gate credentials"
-              className={`hidden md:inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full border text-xs font-mono transition-all ${
-                viewMode === 'login'
-                  ? 'border-cobalt bg-cobalt/20 text-bone-100 ring-1 ring-cobalt'
-                  : 'border-bottle-700 bg-bottle-950/90 text-bone-200 hover:border-bottle-600'
-              }`}
+              className={`hidden md:inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full border text-xs font-mono transition-all ${viewMode === 'login'
+                ? 'border-cobalt bg-cobalt/20 text-bone-100 ring-1 ring-cobalt'
+                : 'border-bottle-700 bg-bottle-950/90 text-bone-200 hover:border-bottle-600'
+                }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
               <span className="truncate max-w-[120px] lg:max-w-[170px]">
@@ -204,11 +202,10 @@ export const Navbar: React.FC = () => {
             {/* 1. Overview */}
             <button
               onClick={() => setViewMode('landing')}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
-                viewMode === 'landing'
-                  ? 'bg-bottle-700 text-bone-100 shadow-sm border border-bottle-600 font-semibold'
-                  : 'text-bone-300 hover:text-bone-100'
-              }`}
+              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${viewMode === 'landing'
+                ? 'bg-bottle-700 text-bone-100 shadow-sm border border-bottle-600 font-semibold'
+                : 'text-bone-300 hover:text-bone-100'
+                }`}
             >
               <Home className="w-3.5 h-3.5" />
               <span>Overview</span>
@@ -221,11 +218,10 @@ export const Navbar: React.FC = () => {
                 setActiveTab('requests');
                 setActiveSubFocus('all');
               }}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
-                viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'all'
-                  ? 'bg-cobalt text-white shadow-sm font-semibold'
-                  : 'text-bone-300 hover:text-bone-100'
-              }`}
+              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'all'
+                ? 'bg-cobalt text-white shadow-sm font-semibold'
+                : 'text-bone-300 hover:text-bone-100'
+                }`}
             >
               <ClipboardList className="w-3.5 h-3.5" />
               <span>Requests Panel</span>
@@ -238,11 +234,10 @@ export const Navbar: React.FC = () => {
                 setActiveTab('requests');
                 setActiveSubFocus('organ');
               }}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
-                viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'organ'
-                  ? 'bg-cobalt text-white shadow-sm font-semibold'
-                  : 'text-bone-300 hover:text-bone-100'
-              }`}
+              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'organ'
+                ? 'bg-cobalt text-white shadow-sm font-semibold'
+                : 'text-bone-300 hover:text-bone-100'
+                }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-vermilion mr-0.5" />
               <span>Organ</span>
@@ -255,11 +250,10 @@ export const Navbar: React.FC = () => {
                 setActiveTab('requests');
                 setActiveSubFocus('blood');
               }}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
-                viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'blood'
-                  ? 'bg-cobalt text-white shadow-sm font-semibold'
-                  : 'text-bone-300 hover:text-bone-100'
-              }`}
+              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'blood'
+                ? 'bg-cobalt text-white shadow-sm font-semibold'
+                : 'text-bone-300 hover:text-bone-100'
+                }`}
             >
               <Droplet className="w-3.5 h-3.5 text-cobalt" />
               <span>Blood</span>
@@ -272,11 +266,10 @@ export const Navbar: React.FC = () => {
                 setActiveTab('medicine');
                 setActiveSubFocus('medicine');
               }}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
-                viewMode === 'dashboard' && activeTab === 'medicine'
-                  ? 'bg-cobalt text-white shadow-sm font-semibold'
-                  : 'text-bone-300 hover:text-bone-100'
-              }`}
+              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${viewMode === 'dashboard' && activeTab === 'medicine'
+                ? 'bg-cobalt text-white shadow-sm font-semibold'
+                : 'text-bone-300 hover:text-bone-100'
+                }`}
             >
               <Pill className="w-3.5 h-3.5 text-sage" />
               <span>Medicines</span>
@@ -289,11 +282,10 @@ export const Navbar: React.FC = () => {
                 setActiveTab('corridors');
                 setActiveSubFocus('all');
               }}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                viewMode === 'dashboard' && activeTab === 'corridors'
-                  ? 'bg-cobalt text-white shadow-sm'
-                  : 'text-bone-300 hover:text-bone-100'
-              }`}
+              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${viewMode === 'dashboard' && activeTab === 'corridors'
+                ? 'bg-cobalt text-white shadow-sm'
+                : 'text-bone-300 hover:text-bone-100'
+                }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Command Center</span>
@@ -303,7 +295,7 @@ export const Navbar: React.FC = () => {
 
           {/* Right Action Tools: 6) IST Clock on left of profile + 3) Small Profile Option in Far Right Corner */}
           <div className="flex items-center space-x-2 shrink-0">
-            
+
             {/* Live Clock IST (placed adjacently to the left of the profile option) */}
             <div className="flex items-center space-x-1.5 text-xs font-mono text-bone-300 bg-bottle-950/70 px-2 py-1 rounded-lg border border-bottle-700/60 whitespace-nowrap shadow-sm">
               <Clock className="w-3.5 h-3.5 text-sage" />
@@ -314,11 +306,10 @@ export const Navbar: React.FC = () => {
             <button
               onClick={toggleAudioMute}
               title={audioMuted ? "Unmute Command Audio Telemetry" : "Mute Command Audio Telemetry"}
-              className={`p-1.5 rounded-lg border transition-all ${
-                audioMuted 
-                  ? 'border-bottle-700 text-bone-400 hover:text-bone-200 bg-bottle-950/60' 
-                  : 'border-sage/40 bg-bottle-700/40 text-sage hover:bg-bottle-700/60'
-              }`}
+              className={`p-1.5 rounded-lg border transition-all ${audioMuted
+                ? 'border-bottle-700 text-bone-400 hover:text-bone-200 bg-bottle-950/60'
+                : 'border-sage/40 bg-bottle-700/40 text-sage hover:bg-bottle-700/60'
+                }`}
             >
               {audioMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
@@ -335,7 +326,7 @@ export const Navbar: React.FC = () => {
 
               {/* Dropdown Menu - Displays details ONLY when clicked */}
               {roleDropdownOpen && (
-                <div 
+                <div
                   className="absolute right-0 mt-2 w-72 bg-bottle-900 border border-bottle-600 rounded-xl shadow-2xl py-2 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
                   onClick={() => setRoleDropdownOpen(false)}
                 >
@@ -368,11 +359,10 @@ export const Navbar: React.FC = () => {
                             setCurrentRole(profile.role);
                             setRoleDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-3.5 py-2 flex items-start space-x-2.5 transition-colors ${
-                            isActive 
-                              ? 'bg-bottle-700/60 text-bone-100 border-l-2 border-cobalt' 
-                              : 'hover:bg-bottle-800 text-bone-300 hover:text-bone-100'
-                          }`}
+                          className={`w-full text-left px-3.5 py-2 flex items-start space-x-2.5 transition-colors ${isActive
+                            ? 'bg-bottle-700/60 text-bone-100 border-l-2 border-cobalt'
+                            : 'hover:bg-bottle-800 text-bone-300 hover:text-bone-100'
+                            }`}
                         >
                           <div className="mt-0.5">
                             <span className={`inline-block w-2 h-2 rounded-full ${isActive ? 'bg-cobalt' : 'bg-bottle-600'}`} />

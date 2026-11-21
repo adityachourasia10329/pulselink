@@ -110,7 +110,8 @@ interface PulseLinkContextType {
 const PulseLinkContext = createContext<PulseLinkContextType | undefined>(undefined);
 
 export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [viewMode, setViewMode] = useState<'landing' | 'dashboard' | 'login'>('landing');
+  // Always open on pseudo login page every time the site is loaded
+  const [viewMode, setViewMode] = useState<'landing' | 'dashboard' | 'login'>('login');
   const [activeTab, setActiveTab] = useState<'corridors' | 'requests' | 'medicine' | 'fairroute' | 'audit'>('corridors');
   const [activeSubFocus, setActiveSubFocus] = useState<'all' | 'organ' | 'blood' | 'medicine'>('all');
   const [currentRole, setCurrentRole] = useState<UserRole>('hospital_coordinator');
@@ -138,22 +139,26 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     soundFx.playSuccessChime();
   };
 
-  // Pseudo-login verification gate state
+  // Pseudo-login verification gate state - saved for fast and easy filing
   const [verificationUser, setVerificationUser] = useState<VerificationUserData | null>(() => {
     try {
       const saved = localStorage.getItem('pulselink_verification_gate');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
     } catch {
       // ignore
     }
     return {
       fullName: 'aditya chourasia',
       email: 'aditya.chourasia10329@gmail.com',
-      workOrganisation: 'cafe / Healthcare Allied Service',
+      workOrganisation: 'cafe',
       city: 'Bengaluru',
       userCategory: 'medical_staff',
       purposeOfVisit: 'requesting',
       phoneWhatsapp: '9313264332',
+      queryRequirements: 'printing on 150 ml cups',
       verifiedAt: new Date().toISOString()
     };
   });
@@ -168,6 +173,19 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       localStorage.setItem('pulselink_verification_gate', JSON.stringify(enrichedData));
     } catch {
       // ignore
+    }
+
+    // Sync selected city if user entered one of our supported cities
+    const matchedCity = SUPPORTED_CITIES.find(
+      c => c.name.toLowerCase() === data.city.toLowerCase() || c.id.toLowerCase() === data.city.toLowerCase()
+    );
+    if (matchedCity) {
+      setSelectedCityState(matchedCity);
+      try {
+        localStorage.setItem('pulselink_selected_city', matchedCity.id);
+      } catch {
+        // ignore
+      }
     }
 
     if (data.userCategory === 'gov_employee') {

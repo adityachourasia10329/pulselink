@@ -34,6 +34,7 @@ export interface VerificationUserData {
   userCategory: UserCategory;
   purposeOfVisit: PurposeOfVisit;
   phoneWhatsapp?: string;
+  queryRequirements?: string;
   verifiedAt?: string;
 }
 
