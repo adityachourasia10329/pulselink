@@ -19,7 +19,8 @@ export const CorridorMap: React.FC = () => {
     selectedCorridorId, 
     setSelectedCorridorId, 
     togglePoliceClearance,
-    currentTimeString
+    currentTimeString,
+    selectedCity
   } = usePulseLink();
 
   const [selectedHospitalId, setSelectedHospitalId] = useState<string>('hosp_narayana');
@@ -96,7 +97,7 @@ export const CorridorMap: React.FC = () => {
             <div className="flex items-center space-x-3">
               <span className="text-bone-300 flex items-center space-x-1">
                 <Navigation className="w-3.5 h-3.5 text-bone-300" />
-                <span>Sector: BENGALURU-URBAN</span>
+                <span>Sector: {selectedCity.name.toUpperCase()}-METRO ({selectedCity.code})</span>
               </span>
               <span className="text-bone-400">|</span>
               <span className="text-sage flex items-center space-x-1">

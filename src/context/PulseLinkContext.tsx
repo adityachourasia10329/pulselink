@@ -10,10 +10,12 @@ import type {
   TelemetryPoint,
   FairRouteCandidate,
   ClearChainBlock,
-  VerificationUserData
+  VerificationUserData,
+  CityConfig
 } from '../types';
 import {
   USER_PROFILES,
+  SUPPORTED_CITIES,
   INITIAL_CORRIDORS,
   INITIAL_ORGANS,
   INITIAL_BLOOD_BANKS,
@@ -38,6 +40,11 @@ interface PulseLinkContextType {
   setCurrentRole: (role: UserRole) => void;
   currentUser: UserProfile;
   allProfiles: UserProfile[];
+
+  // City Grid Operations
+  selectedCity: CityConfig;
+  setSelectedCity: (city: CityConfig) => void;
+  supportedCities: CityConfig[];
 
   // Pseudo-login verification gate
   verificationUser: VerificationUserData | null;
@@ -108,6 +115,28 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [activeSubFocus, setActiveSubFocus] = useState<'all' | 'organ' | 'blood' | 'medicine'>('all');
   const [currentRole, setCurrentRole] = useState<UserRole>('hospital_coordinator');
   const [selectedCorridorId, setSelectedCorridorId] = useState<string>('corr-01');
+
+  // Selected City Grid Operations
+  const [selectedCity, setSelectedCityState] = useState<CityConfig>(() => {
+    try {
+      const savedCityId = localStorage.getItem('pulselink_selected_city');
+      const found = SUPPORTED_CITIES.find(c => c.id === savedCityId);
+      if (found) return found;
+    } catch {
+      // ignore
+    }
+    return SUPPORTED_CITIES[0]; // Bengaluru default
+  });
+
+  const setSelectedCity = (city: CityConfig) => {
+    setSelectedCityState(city);
+    try {
+      localStorage.setItem('pulselink_selected_city', city.id);
+    } catch {
+      // ignore
+    }
+    soundFx.playSuccessChime();
+  };
 
   // Pseudo-login verification gate state
   const [verificationUser, setVerificationUser] = useState<VerificationUserData | null>(() => {
@@ -558,6 +587,9 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setCurrentRole,
       currentUser,
       allProfiles: USER_PROFILES,
+      selectedCity,
+      setSelectedCity,
+      supportedCities: SUPPORTED_CITIES,
       verificationUser,
       submitVerification,
       logoutVerification,

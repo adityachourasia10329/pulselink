@@ -15,7 +15,9 @@ import {
   Droplet,
   Pill,
   Lock,
-  ChevronRight
+  ChevronRight,
+  MapPin,
+  Check
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -30,6 +32,9 @@ export const Navbar: React.FC = () => {
     setCurrentRole, 
     currentUser, 
     allProfiles,
+    selectedCity,
+    setSelectedCity,
+    supportedCities,
     verificationUser,
     audioMuted, 
     toggleAudioMute,
@@ -41,6 +46,7 @@ export const Navbar: React.FC = () => {
   } = usePulseLink();
 
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
 
   // Check if any organ is under 60 minutes
   const urgentOrgan = organTransfers.find(o => o.remainingSeconds < 3600);
@@ -75,34 +81,103 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           
           {/* Logo & Platform Name */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <button 
               onClick={() => setViewMode('landing')}
-              className="flex items-center space-x-3 text-left group focus:outline-none"
+              className="flex items-center space-x-2.5 text-left group focus:outline-none"
             >
-              <div className="w-10 h-10 rounded-lg bg-bottle-700 border border-bottle-600 flex items-center justify-center text-vermilion group-hover:border-vermilion/50 transition-colors shadow-inner">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-bottle-700 border border-bottle-600 flex items-center justify-center text-vermilion group-hover:border-vermilion/50 transition-colors shadow-inner">
                 <Heart className="w-5 h-5 fill-vermilion/20 stroke-vermilion group-hover:scale-110 transition-transform" />
               </div>
               <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-serif text-2xl font-bold tracking-tight text-bone-100">
-                    Pulse<span className="text-vermilion">Link</span>
-                  </span>
-                  <span className="text-[10px] uppercase font-mono tracking-widest px-1.5 py-0.5 bg-bottle-700/60 text-bone-300 rounded border border-bottle-600/50">
-                    v2.6 Bengaluru
-                  </span>
-                </div>
-                <p className="text-[11px] text-bone-300 tracking-wide font-sans hidden xl:block">
-                  Unified Medical Logistics &amp; Trust Network
+                <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-bone-100">
+                  Pulse<span className="text-vermilion">Link</span>
+                </span>
+                <p className="text-[10px] text-bone-300 tracking-wide font-sans hidden 2xl:block">
+                  Unified Medical Logistics
                 </p>
               </div>
             </button>
+
+            {/* City Selector Button with Dropdown (Photo match) */}
+            <div className="relative">
+              <button
+                onClick={() => setCityDropdownOpen(!cityDropdownOpen)}
+                className="flex items-center space-x-1 text-[10px] uppercase font-mono tracking-wider px-2 py-1 bg-bottle-950/90 hover:bg-bottle-800 text-bone-200 hover:text-bone-100 rounded-md border border-bottle-700 hover:border-cobalt transition-all shadow-sm group"
+                title="Click to change operating city grid"
+              >
+                <MapPin className="w-3 h-3 text-sage group-hover:scale-110 transition-transform" />
+                <span className="font-semibold text-bone-100">v2.6 {selectedCity.name}</span>
+                <ChevronDown className={`w-3 h-3 text-bone-400 group-hover:text-bone-200 transition-transform ${cityDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* City Dropdown Menu */}
+              {cityDropdownOpen && (
+                <div 
+                  className="absolute left-0 mt-2 w-72 sm:w-80 bg-bottle-900 border border-bottle-600 rounded-xl shadow-2xl py-2 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="px-3.5 py-2 border-b border-bottle-700/80">
+                    <p className="text-[10px] uppercase font-mono tracking-wider text-bone-400">
+                      Switch Healthcare Operations Grid
+                    </p>
+                    <p className="text-xs text-bone-200 font-sans mt-0.5 font-medium">
+                      Select City Network (9 Operational Hubs)
+                    </p>
+                  </div>
+
+                  <div className="max-h-72 overflow-y-auto py-1">
+                    {supportedCities.map(city => {
+                      const isSelected = city.id === selectedCity.id;
+                      return (
+                        <button
+                          key={city.id}
+                          onClick={() => {
+                            setSelectedCity(city);
+                            setCityDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3.5 py-2.5 flex items-start space-x-3 transition-colors ${
+                            isSelected 
+                              ? 'bg-bottle-700/70 text-bone-100 border-l-2 border-cobalt' 
+                              : 'hover:bg-bottle-800/80 text-bone-300 hover:text-bone-100'
+                          }`}
+                        >
+                          <div className="mt-0.5">
+                            {isSelected ? (
+                              <Check className="w-4 h-4 text-cobalt" />
+                            ) : (
+                              <MapPin className="w-4 h-4 text-bone-400" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold text-bone-100">
+                                {city.name}
+                              </span>
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-bottle-950 border border-bottle-700 text-bone-300 uppercase">
+                                {city.code}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-bone-300 font-sans mt-0.5">
+                              {city.state}
+                            </p>
+                            <p className="text-[10px] text-bone-400 font-mono mt-0.5 line-clamp-1">
+                              {city.activeHospitals} Hospitals • {city.activeCorridors} Active Corridors
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* B2B Pseudo-Login Pill (Image 1 match) */}
             <button
               onClick={() => setViewMode(viewMode === 'login' ? 'dashboard' : 'login')}
               title="Click to manage B2B Verification Gate credentials & visit survey"
-              className={`hidden sm:inline-flex items-center space-x-1.5 px-3 py-1 rounded-full border text-xs font-mono transition-all ${
+              className={`hidden md:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full border text-xs font-mono transition-all ${
                 viewMode === 'login'
                   ? 'border-cobalt bg-cobalt/20 text-bone-100 ring-1 ring-cobalt'
                   : verificationUser
@@ -113,7 +188,7 @@ export const Navbar: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-sage animate-pulse" />
               <Lock className="w-3 h-3 text-amber" />
               <span className="font-semibold text-bone-100">B2B:</span>
-              <span className="truncate max-w-[120px] md:max-w-[170px]">
+              <span className="truncate max-w-[100px] lg:max-w-[150px]">
                 {verificationUser ? `${verificationUser.fullName} (${verificationUser.workOrganisation})` : 'Verify Gate'}
               </span>
               <ChevronRight className="w-3 h-3 text-bone-300" />

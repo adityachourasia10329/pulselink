@@ -8,8 +8,93 @@ import type {
   TelemetryPoint, 
   FairRouteCandidate, 
   ClearChainBlock,
-  UserProfile
+  UserProfile,
+  CityConfig
 } from '../types';
+
+export const SUPPORTED_CITIES: CityConfig[] = [
+  {
+    id: 'bengaluru',
+    name: 'Bengaluru',
+    state: 'Karnataka',
+    code: 'BLR',
+    activeHospitals: 8,
+    activeCorridors: 3,
+    description: 'Silicon Plateau Medical Corridor & Heart Transplant Hub'
+  },
+  {
+    id: 'mumbai',
+    name: 'Mumbai',
+    state: 'Maharashtra',
+    code: 'BOM',
+    activeHospitals: 12,
+    activeCorridors: 5,
+    description: 'Western Seaboard Multi-Organ Emergency Grid'
+  },
+  {
+    id: 'delhi',
+    name: 'Delhi',
+    state: 'National Capital Region',
+    code: 'DEL',
+    activeHospitals: 14,
+    activeCorridors: 6,
+    description: 'Apex AIIMS & Northern Arterial Traffic Preemption Grid'
+  },
+  {
+    id: 'ahmedabad',
+    name: 'Ahmedabad',
+    state: 'Gujarat',
+    code: 'AMD',
+    activeHospitals: 7,
+    activeCorridors: 2,
+    description: 'Sabarmati Healthcare Ring & Regional Blood Depot'
+  },
+  {
+    id: 'chennai',
+    name: 'Chennai',
+    state: 'Tamil Nadu',
+    code: 'MAA',
+    activeHospitals: 9,
+    activeCorridors: 4,
+    description: 'Southern Transplant Capital & Cadaver Organ Corridor'
+  },
+  {
+    id: 'kolkata',
+    name: 'Kolkata',
+    state: 'West Bengal',
+    code: 'CCU',
+    activeHospitals: 8,
+    activeCorridors: 3,
+    description: 'Eastern Zonal Cold-Chain & Emergency Transit Hub'
+  },
+  {
+    id: 'guwahati',
+    name: 'Guwahati',
+    state: 'Assam',
+    code: 'GAU',
+    activeHospitals: 5,
+    activeCorridors: 2,
+    description: 'Northeast Medical Transit Lifeline & Air Bridge Node'
+  },
+  {
+    id: 'chandigarh',
+    name: 'Chandigarh',
+    state: 'Punjab / Haryana',
+    code: 'IXC',
+    activeHospitals: 6,
+    activeCorridors: 2,
+    description: 'PGIMER Tri-City Rapid Green Corridor Network'
+  },
+  {
+    id: 'hyderabad',
+    name: 'Hyderabad',
+    state: 'Telangana',
+    code: 'HYD',
+    activeHospitals: 10,
+    activeCorridors: 4,
+    description: 'Deccan Genome Valley & Robotic Surgical Dispatch'
+  }
+];
 
 export const USER_PROFILES: UserProfile[] = [
   {

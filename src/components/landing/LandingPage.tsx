@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
-  const { setViewMode, setActiveTab } = usePulseLink();
+  const { setViewMode, setActiveTab, selectedCity } = usePulseLink();
 
   const handleLaunchCommandCenter = (tab?: 'corridors' | 'requests' | 'medicine' | 'fairroute' | 'audit') => {
     if (tab) setActiveTab(tab);
@@ -33,7 +33,7 @@ export const LandingPage: React.FC = () => {
           <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-bottle-900 border border-bottle-700 shadow-lg">
             <span className="w-2 h-2 rounded-full bg-vermilion animate-ping" />
             <span className="text-xs font-mono font-medium text-bone-200 uppercase tracking-widest">
-              Autonomous Medical Logistics • Bengaluru Grid
+              Autonomous Medical Logistics • {selectedCity.name} Grid
             </span>
           </div>
 
@@ -43,7 +43,7 @@ export const LandingPage: React.FC = () => {
               Every Second Counts When Life Hangs in <span className="italic text-vermilion underline decoration-vermilion/40 decoration-wavy underline-offset-8">Transit.</span>
             </h1>
             <p className="font-sans text-base sm:text-xl text-bone-300 max-w-2xl mx-auto leading-relaxed pt-2">
-              PulseLink coordinates time-critical organ cold ischemia windows, preempts traffic signals for green corridors, and secures an authentic, temperature-guaranteed medicine supply chain across Bengaluru.
+              PulseLink coordinates time-critical organ cold ischemia windows, preempts traffic signals for green corridors, and secures an authentic, temperature-guaranteed medicine supply chain across {selectedCity.name}.
             </p>
           </div>
 

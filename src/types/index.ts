@@ -37,6 +37,16 @@ export interface VerificationUserData {
   verifiedAt?: string;
 }
 
+export interface CityConfig {
+  id: string;
+  name: string;
+  state: string;
+  code: string;
+  activeHospitals: number;
+  activeCorridors: number;
+  description: string;
+}
+
 export type OrganType = 'Heart' | 'Liver' | 'Kidney' | 'Cornea' | 'Lungs';
 
 export interface OrganViabilityItem {
