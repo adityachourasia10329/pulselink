@@ -12,7 +12,8 @@ import {
   Pill,
   ChevronRight,
   MapPin,
-  Check
+  Check,
+  Activity
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -85,17 +86,18 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Bar */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      {/* Main Bar - Full width edge-to-edge pushing PulseLink to top-left corner */}
+      <div className="w-full px-3 sm:px-5 lg:px-6">
         <div className="flex items-center justify-between h-14">
           
-          {/* Left: Logo (no heart symbol, shortened text) + City Selector + Clean Profile Pill */}
+          {/* Left Top Corner: PulseLink Logo & Medical Pulse Wave Symbol */}
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
-            {/* 1) & 4) Clean Shortened PulseLink Logo (Heart symbol removed) */}
             <button 
               onClick={() => setViewMode('landing')}
-              className="text-left group focus:outline-none"
+              className="flex items-center space-x-1.5 text-left group focus:outline-none"
+              title="PulseLink Overview"
             >
+              <Activity className="w-4 h-4 text-cobalt shrink-0 group-hover:scale-110 transition-transform" />
               <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-bone-100 group-hover:opacity-90 transition-opacity">
                 Pulse<span className="text-cobalt">Link</span>
               </span>
