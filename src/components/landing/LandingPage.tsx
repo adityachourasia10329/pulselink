@@ -7,7 +7,8 @@ import {
   ShieldCheck, 
   ArrowRight, 
   CheckCircle2, 
-  Scale
+  Scale,
+  Lock
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
@@ -62,6 +63,14 @@ export const LandingPage: React.FC = () => {
             >
               <Activity className="w-4 h-4 text-sage" />
               <span>Inspect Organ Viability Timers</span>
+            </button>
+
+            <button
+              onClick={() => setViewMode('login')}
+              className="w-full sm:w-auto px-6 py-4 rounded-xl bg-bottle-950 hover:bg-bottle-900 text-amber border border-amber/50 font-semibold text-sm transition-all flex items-center justify-center space-x-2 shadow-lg"
+            >
+              <Lock className="w-4 h-4" />
+              <span>B2B Verification Gate</span>
             </button>
           </div>
 

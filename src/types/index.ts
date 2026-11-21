@@ -13,6 +13,30 @@ export interface UserProfile {
   badgeId: string;
 }
 
+export type UserCategory = 
+  | 'patient_family' 
+  | 'medical_staff' 
+  | 'gov_employee' 
+  | 'other';
+
+export type PurposeOfVisit = 
+  | 'requesting' 
+  | 'responding' 
+  | 'inquiry' 
+  | 'regular_audit' 
+  | 'others';
+
+export interface VerificationUserData {
+  fullName: string;
+  email: string;
+  workOrganisation: string;
+  city: string;
+  userCategory: UserCategory;
+  purposeOfVisit: PurposeOfVisit;
+  phoneWhatsapp?: string;
+  verifiedAt?: string;
+}
+
 export type OrganType = 'Heart' | 'Liver' | 'Kidney' | 'Cornea' | 'Lungs';
 
 export interface OrganViabilityItem {

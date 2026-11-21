@@ -10,17 +10,27 @@ import {
   Flame,
   LayoutDashboard,
   Home,
-  Palette
+  Palette,
+  ClipboardList,
+  Droplet,
+  Pill,
+  Lock,
+  ChevronRight
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { 
     viewMode, 
     setViewMode, 
+    activeTab,
+    setActiveTab,
+    activeSubFocus,
+    setActiveSubFocus,
     currentRole, 
     setCurrentRole, 
     currentUser, 
     allProfiles,
+    verificationUser,
     audioMuted, 
     toggleAudioMute,
     currentTimeString,
@@ -65,7 +75,7 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           
           {/* Logo & Platform Name */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <button 
               onClick={() => setViewMode('landing')}
               className="flex items-center space-x-3 text-left group focus:outline-none"
@@ -82,20 +92,42 @@ export const Navbar: React.FC = () => {
                     v2.6 Bengaluru
                   </span>
                 </div>
-                <p className="text-[11px] text-bone-300 tracking-wide font-sans hidden sm:block">
+                <p className="text-[11px] text-bone-300 tracking-wide font-sans hidden xl:block">
                   Unified Medical Logistics &amp; Trust Network
                 </p>
               </div>
             </button>
+
+            {/* B2B Pseudo-Login Pill (Image 1 match) */}
+            <button
+              onClick={() => setViewMode(viewMode === 'login' ? 'dashboard' : 'login')}
+              title="Click to manage B2B Verification Gate credentials & visit survey"
+              className={`hidden sm:inline-flex items-center space-x-1.5 px-3 py-1 rounded-full border text-xs font-mono transition-all ${
+                viewMode === 'login'
+                  ? 'border-cobalt bg-cobalt/20 text-bone-100 ring-1 ring-cobalt'
+                  : verificationUser
+                  ? 'border-bottle-700 bg-bottle-950/90 text-bone-200 hover:border-bottle-600'
+                  : 'border-amber/70 bg-amber/10 text-amber hover:bg-amber/20'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-sage animate-pulse" />
+              <Lock className="w-3 h-3 text-amber" />
+              <span className="font-semibold text-bone-100">B2B:</span>
+              <span className="truncate max-w-[120px] md:max-w-[170px]">
+                {verificationUser ? `${verificationUser.fullName} (${verificationUser.workOrganisation})` : 'Verify Gate'}
+              </span>
+              <ChevronRight className="w-3 h-3 text-bone-300" />
+            </button>
           </div>
 
-          {/* Center Navigation Mode Toggle */}
-          <div className="flex items-center bg-bottle-950 p-1 rounded-lg border border-bottle-700/80">
+          {/* Center Navigation Mode & Section Tabs (Overview, Requests Panel, Organ, Blood, Medicines, Command Center) */}
+          <nav className="flex items-center bg-bottle-950 p-1 rounded-xl border border-bottle-700/80 max-w-full overflow-x-auto no-scrollbar space-x-0.5 sm:space-x-1">
+            {/* 1. Overview */}
             <button
               onClick={() => setViewMode('landing')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${
                 viewMode === 'landing'
-                  ? 'bg-bottle-700 text-bone-100 shadow-sm border border-bottle-600'
+                  ? 'bg-bottle-700 text-bone-100 shadow-sm border border-bottle-600 font-semibold'
                   : 'text-bone-300 hover:text-bone-100'
               }`}
             >
@@ -103,19 +135,92 @@ export const Navbar: React.FC = () => {
               <span>Overview</span>
             </button>
 
+            {/* 2. Requests Panel */}
             <button
-              onClick={() => setViewMode('dashboard')}
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                viewMode === 'dashboard'
-                  ? 'bg-vermilion text-bone-50 shadow-md shadow-vermilion/25'
+              onClick={() => {
+                setViewMode('dashboard');
+                setActiveTab('requests');
+                setActiveSubFocus('all');
+              }}
+              className={`flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${
+                viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'all'
+                  ? 'bg-cobalt text-white shadow-md shadow-cobalt/25 font-semibold'
+                  : 'text-bone-300 hover:text-bone-100'
+              }`}
+            >
+              <ClipboardList className="w-3.5 h-3.5" />
+              <span>Requests Panel</span>
+            </button>
+
+            {/* 3. Organ */}
+            <button
+              onClick={() => {
+                setViewMode('dashboard');
+                setActiveTab('requests');
+                setActiveSubFocus('organ');
+              }}
+              className={`flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${
+                viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'organ'
+                  ? 'bg-cobalt text-white shadow-md shadow-cobalt/25 font-semibold'
+                  : 'text-bone-300 hover:text-bone-100'
+              }`}
+            >
+              <Heart className="w-3.5 h-3.5 text-vermilion" />
+              <span>Organ</span>
+            </button>
+
+            {/* 4. Blood */}
+            <button
+              onClick={() => {
+                setViewMode('dashboard');
+                setActiveTab('requests');
+                setActiveSubFocus('blood');
+              }}
+              className={`flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${
+                viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'blood'
+                  ? 'bg-cobalt text-white shadow-md shadow-cobalt/25 font-semibold'
+                  : 'text-bone-300 hover:text-bone-100'
+              }`}
+            >
+              <Droplet className="w-3.5 h-3.5 text-vermilion" />
+              <span>Blood</span>
+            </button>
+
+            {/* 5. Medicines */}
+            <button
+              onClick={() => {
+                setViewMode('dashboard');
+                setActiveTab('medicine');
+                setActiveSubFocus('medicine');
+              }}
+              className={`flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${
+                viewMode === 'dashboard' && activeTab === 'medicine'
+                  ? 'bg-cobalt text-white shadow-md shadow-cobalt/25 font-semibold'
+                  : 'text-bone-300 hover:text-bone-100'
+              }`}
+            >
+              <Pill className="w-3.5 h-3.5 text-sage" />
+              <span>Medicines</span>
+            </button>
+
+            {/* 6. Command Center */}
+            <button
+              onClick={() => {
+                setViewMode('dashboard');
+                setActiveTab('corridors');
+                setActiveSubFocus('all');
+              }}
+              className={`flex items-center space-x-1 sm:space-x-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                viewMode === 'dashboard' && activeTab === 'corridors'
+                  ? 'bg-cobalt text-white shadow-md shadow-cobalt/25'
                   : 'text-bone-300 hover:text-bone-100'
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Command Center</span>
-              <span className="w-2 h-2 rounded-full bg-sage animate-ping-slow ml-1" />
+              <span className="w-2 h-2 rounded-full bg-sage animate-ping-slow ml-0.5" />
             </button>
-          </div>
+          </nav>
 
           {/* Right Action Tools: Role Switcher & Audio */}
           <div className="flex items-center space-x-3">

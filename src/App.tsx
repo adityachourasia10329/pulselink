@@ -3,6 +3,7 @@ import { PulseLinkProvider, usePulseLink } from './context/PulseLinkContext';
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/landing/LandingPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
+import { VerificationGatePage } from './components/auth/VerificationGatePage';
 
 const AppContent: React.FC = () => {
   const { viewMode } = usePulseLink();
@@ -11,7 +12,13 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-bottle-800 text-bone-100 flex flex-col font-sans selection:bg-vermilion selection:text-bone-50">
       <Navbar />
       <div className="flex-1">
-        {viewMode === 'landing' ? <LandingPage /> : <DashboardLayout />}
+        {viewMode === 'login' ? (
+          <VerificationGatePage />
+        ) : viewMode === 'landing' ? (
+          <LandingPage />
+        ) : (
+          <DashboardLayout />
+        )}
       </div>
 
       {/* Persistent subtle footer governance badge */}

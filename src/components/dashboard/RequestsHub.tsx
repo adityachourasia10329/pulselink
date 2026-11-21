@@ -18,7 +18,9 @@ export const RequestsHub: React.FC = () => {
     bloodBanks, 
     bloodRequests, 
     broadcastEmergencyBlood, 
-    advanceBloodRequestStatus 
+    advanceBloodRequestStatus,
+    activeSubFocus,
+    setActiveSubFocus 
   } = usePulseLink();
 
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
@@ -56,7 +58,51 @@ export const RequestsHub: React.FC = () => {
   return (
     <div className="space-y-8">
       
+      {/* Sub-Focus Filter Pills */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-bottle-950/80 border border-bottle-700/80 p-2.5 rounded-xl">
+        <div className="flex items-center space-x-1.5">
+          <span className="text-xs font-mono text-bone-400 mr-2">Filter View:</span>
+          <button
+            onClick={() => setActiveSubFocus('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activeSubFocus === 'all'
+                ? 'bg-cobalt text-white shadow-sm font-semibold'
+                : 'text-bone-300 hover:text-bone-100 hover:bg-bottle-800'
+            }`}
+          >
+            All Requests &amp; Trackers
+          </button>
+          <button
+            onClick={() => setActiveSubFocus('organ')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activeSubFocus === 'organ'
+                ? 'bg-cobalt text-white shadow-sm font-semibold'
+                : 'text-bone-300 hover:text-bone-100 hover:bg-bottle-800'
+            }`}
+          >
+            <Heart className="w-3 h-3 text-vermilion" />
+            <span>Organ Viability ({organTransfers.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveSubFocus('blood')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activeSubFocus === 'blood'
+                ? 'bg-cobalt text-white shadow-sm font-semibold'
+                : 'text-bone-300 hover:text-bone-100 hover:bg-bottle-800'
+            }`}
+          >
+            <Droplet className="w-3 h-3 text-vermilion" />
+            <span>Blood Shortages &amp; Banks ({bloodRequests.length})</span>
+          </button>
+        </div>
+
+        <div className="text-xs font-mono text-bone-400">
+          Showing: <span className="text-bone-100 font-semibold capitalize">{activeSubFocus === 'all' ? 'Unified Hub' : `${activeSubFocus} Section`}</span>
+        </div>
+      </div>
+
       {/* SECTION 1: ORGAN VIABILITY TRACKER */}
+      {(activeSubFocus === 'all' || activeSubFocus === 'organ') && (
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-bottle-700/80 pb-3">
           <div>
@@ -172,9 +218,13 @@ export const RequestsHub: React.FC = () => {
           })}
         </div>
       </div>
+      )}
 
-      {/* SECTION 2: REGIONAL BLOOD SHORTAGE & EMERGENCY BROADCAST */}
-      <div className="space-y-4">
+      {/* SECTION 2 & 3: BLOOD SHORTAGES & PIPELINE */}
+      {(activeSubFocus === 'all' || activeSubFocus === 'blood') && (
+        <div className="space-y-8">
+          {/* SECTION 2: REGIONAL BLOOD SHORTAGE & EMERGENCY BROADCAST */}
+          <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-bottle-700/80 pb-3">
           <div>
             <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-bone-300">
@@ -357,6 +407,8 @@ export const RequestsHub: React.FC = () => {
           })}
         </div>
       </div>
+      </div>
+      )}
 
       {/* MODAL: BROADCAST EMERGENCY BLOOD REQUEST */}
       {broadcastModalOpen && (

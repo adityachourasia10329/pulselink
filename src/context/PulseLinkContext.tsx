@@ -9,7 +9,8 @@ import type {
   MedicineBatch,
   TelemetryPoint,
   FairRouteCandidate,
-  ClearChainBlock
+  ClearChainBlock,
+  VerificationUserData
 } from '../types';
 import {
   USER_PROFILES,
@@ -27,14 +28,21 @@ import { computeSha256 } from '../utils/crypto';
 
 interface PulseLinkContextType {
   // Navigation & Role
-  viewMode: 'landing' | 'dashboard';
-  setViewMode: (mode: 'landing' | 'dashboard') => void;
+  viewMode: 'landing' | 'dashboard' | 'login';
+  setViewMode: (mode: 'landing' | 'dashboard' | 'login') => void;
   activeTab: 'corridors' | 'requests' | 'medicine' | 'fairroute' | 'audit';
   setActiveTab: (tab: 'corridors' | 'requests' | 'medicine' | 'fairroute' | 'audit') => void;
+  activeSubFocus: 'all' | 'organ' | 'blood' | 'medicine';
+  setActiveSubFocus: (focus: 'all' | 'organ' | 'blood' | 'medicine') => void;
   currentRole: UserRole;
   setCurrentRole: (role: UserRole) => void;
   currentUser: UserProfile;
   allProfiles: UserProfile[];
+
+  // Pseudo-login verification gate
+  verificationUser: VerificationUserData | null;
+  submitVerification: (data: VerificationUserData) => void;
+  logoutVerification: () => void;
 
   // Real-Time Corridors & Vehicles
   corridors: CorridorRoute[];
@@ -95,10 +103,61 @@ interface PulseLinkContextType {
 const PulseLinkContext = createContext<PulseLinkContextType | undefined>(undefined);
 
 export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [viewMode, setViewMode] = useState<'landing' | 'dashboard'>('landing');
+  const [viewMode, setViewMode] = useState<'landing' | 'dashboard' | 'login'>('landing');
   const [activeTab, setActiveTab] = useState<'corridors' | 'requests' | 'medicine' | 'fairroute' | 'audit'>('corridors');
+  const [activeSubFocus, setActiveSubFocus] = useState<'all' | 'organ' | 'blood' | 'medicine'>('all');
   const [currentRole, setCurrentRole] = useState<UserRole>('hospital_coordinator');
   const [selectedCorridorId, setSelectedCorridorId] = useState<string>('corr-01');
+
+  // Pseudo-login verification gate state
+  const [verificationUser, setVerificationUser] = useState<VerificationUserData | null>(() => {
+    try {
+      const saved = localStorage.getItem('pulselink_verification_gate');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return {
+      fullName: 'aditya chourasia',
+      email: 'aditya.chourasia10329@gmail.com',
+      workOrganisation: 'cafe / Healthcare Allied Service',
+      city: 'Bengaluru',
+      userCategory: 'medical_staff',
+      purposeOfVisit: 'requesting',
+      phoneWhatsapp: '9313264332',
+      verifiedAt: new Date().toISOString()
+    };
+  });
+
+  const submitVerification = (data: VerificationUserData) => {
+    const enrichedData = {
+      ...data,
+      verifiedAt: new Date().toISOString()
+    };
+    setVerificationUser(enrichedData);
+    try {
+      localStorage.setItem('pulselink_verification_gate', JSON.stringify(enrichedData));
+    } catch {
+      // ignore
+    }
+
+    if (data.userCategory === 'gov_employee') {
+      setCurrentRole('ambulance_dispatch');
+    } else if (data.userCategory === 'medical_staff') {
+      setCurrentRole('hospital_coordinator');
+    }
+    
+    setViewMode('dashboard');
+  };
+
+  const logoutVerification = () => {
+    setVerificationUser(null);
+    try {
+      localStorage.removeItem('pulselink_verification_gate');
+    } catch {
+      // ignore
+    }
+  };
 
   const [corridors, setCorridors] = useState<CorridorRoute[]>(INITIAL_CORRIDORS);
   const [organTransfers, setOrganTransfers] = useState<OrganViabilityItem[]>(INITIAL_ORGANS);
@@ -127,7 +186,12 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [themeMode]);
 
-  const currentUser = USER_PROFILES.find(p => p.role === currentRole) || USER_PROFILES[0];
+  const baseProfile = USER_PROFILES.find(p => p.role === currentRole) || USER_PROFILES[0];
+  const currentUser: UserProfile = verificationUser ? {
+    ...baseProfile,
+    name: verificationUser.fullName,
+    institution: verificationUser.workOrganisation || baseProfile.institution
+  } : baseProfile;
 
   const toggleAudioMute = () => {
     const next = !audioMuted;
@@ -488,10 +552,15 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setViewMode,
       activeTab,
       setActiveTab,
+      activeSubFocus,
+      setActiveSubFocus,
       currentRole,
       setCurrentRole,
       currentUser,
       allProfiles: USER_PROFILES,
+      verificationUser,
+      submitVerification,
+      logoutVerification,
       corridors,
       togglePoliceClearance,
       selectedCorridorId,
