@@ -433,7 +433,7 @@ export const MedicineNetwork: React.FC = () => {
                 <ReferenceArea y1={2} y2={8} fill="#4ADE80" fillOpacity={0.07} />
                 
                 {/* Threshold Line at 8°C */}
-                <ReferenceLine y={8} stroke="#E63B2E" strokeDasharray="3 3" label={{ value: 'Max Safe: 8°C', fill: '#E63B2E', fontSize: 10, position: 'right' }} />
+                <ReferenceLine y={8} stroke="#0C45B0" strokeDasharray="3 3" label={{ value: 'Max Safe: 8°C', fill: '#0C45B0', fontSize: 10, position: 'right' }} />
                 <ReferenceLine y={2} stroke="#4ADE80" strokeDasharray="3 3" label={{ value: 'Min Safe: 2°C', fill: '#4ADE80', fontSize: 10, position: 'right' }} />
 
                 <XAxis 
@@ -465,9 +465,9 @@ export const MedicineNetwork: React.FC = () => {
                 <Line 
                   type="monotone" 
                   dataKey="temperature" 
-                  stroke={isExcursionActive ? '#E63B2E' : '#4ADE80'} 
+                  stroke={isExcursionActive ? '#0C45B0' : '#4ADE80'} 
                   strokeWidth={2.5} 
-                  dot={{ r: 3, fill: isExcursionActive ? '#E63B2E' : '#4ADE80' }}
+                  dot={{ r: 3, fill: isExcursionActive ? '#0C45B0' : '#4ADE80' }}
                   isAnimationActive={false}
                 />
               </LineChart>

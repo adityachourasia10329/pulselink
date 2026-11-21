@@ -179,7 +179,7 @@ export const CorridorMap: React.FC = () => {
                     <path
                       d={pathStr}
                       fill="none"
-                      stroke={activeCorridor.policeClearanceActive ? '#E63B2E' : '#4ADE80'}
+                      stroke={activeCorridor.policeClearanceActive ? '#0C45B0' : '#4ADE80'}
                       strokeWidth="8"
                       strokeOpacity="0.3"
                       filter="url(#corridor-glow)"
@@ -188,7 +188,7 @@ export const CorridorMap: React.FC = () => {
                     <path
                       d={pathStr}
                       fill="none"
-                      stroke={activeCorridor.policeClearanceActive ? '#FF5A4D' : '#4ADE80'}
+                      stroke={activeCorridor.policeClearanceActive ? '#2E69DB' : '#4ADE80'}
                       strokeWidth="3.5"
                       strokeDasharray={activeCorridor.policeClearanceActive ? 'none' : '6 4'}
                     />
@@ -205,7 +205,7 @@ export const CorridorMap: React.FC = () => {
                     cx={pt.x}
                     cy={pt.y}
                     r={idx === 0 || idx === activeCorridor.routePath.length - 1 ? 5 : 3}
-                    fill={activeCorridor.policeClearanceActive ? '#E63B2E' : '#4ADE80'}
+                    fill={activeCorridor.policeClearanceActive ? '#0C45B0' : '#4ADE80'}
                     stroke="#09241C"
                     strokeWidth="1.5"
                   />
@@ -257,7 +257,7 @@ export const CorridorMap: React.FC = () => {
                   markerFill = '#4ADE80';
                   markerSize = 8;
                 } else if (isDest) {
-                  markerFill = '#E63B2E';
+                  markerFill = '#0C45B0';
                   markerSize = 8;
                 }
 
@@ -303,20 +303,20 @@ export const CorridorMap: React.FC = () => {
                 {/* Radar sweep / pulse around vehicle */}
                 <circle 
                   r="24" 
-                  fill={activeCorridor.policeClearanceActive ? '#E63B2E' : '#4ADE80'} 
+                  fill={activeCorridor.policeClearanceActive ? '#0C45B0' : '#4ADE80'} 
                   fillOpacity="0.18" 
                   className="animate-ping" 
                 />
                 <circle 
                   r="14" 
                   fill="#09241C" 
-                  stroke={activeCorridor.policeClearanceActive ? '#E63B2E' : '#4ADE80'} 
+                  stroke={activeCorridor.policeClearanceActive ? '#0C45B0' : '#4ADE80'} 
                   strokeWidth="2.5" 
                 />
                 {/* Icon inside marker */}
                 <circle 
                   r="4" 
-                  fill={activeCorridor.policeClearanceActive ? '#FF5A4D' : '#4ADE80'} 
+                  fill={activeCorridor.policeClearanceActive ? '#2E69DB' : '#4ADE80'} 
                 />
                 {/* Vehicle Callout Tag */}
                 <g transform="translate(18, -12)">
@@ -327,7 +327,7 @@ export const CorridorMap: React.FC = () => {
                     height="28" 
                     rx="4" 
                     fill="#09241C" 
-                    stroke={activeCorridor.policeClearanceActive ? '#E63B2E' : '#164A3B'} 
+                    stroke={activeCorridor.policeClearanceActive ? '#0C45B0' : '#164A3B'} 
                     strokeWidth="1.2" 
                   />
                   <text x="6" y="12" fill="#EFE7DA" fontSize="9" fontFamily="monospace" fontWeight="bold">
