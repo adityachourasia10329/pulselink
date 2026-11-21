@@ -122,3 +122,20 @@ body {
 .animate-siren {
   animation: sirenFlash 1s infinite;
 }
+
+/* News Headline Right-to-Left Ticker */
+@keyframes marqueeHeadline {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-headline-ticker {
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+  animation: marqueeHeadline 32s linear infinite;
+}
+
+.animate-headline-ticker:hover {
+  animation-play-state: paused;
+}

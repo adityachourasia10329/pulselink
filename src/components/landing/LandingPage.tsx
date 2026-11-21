@@ -70,7 +70,7 @@ export const LandingPage: React.FC = () => {
               className="w-full sm:w-auto px-6 py-4 rounded-xl bg-bottle-950 hover:bg-bottle-900 text-amber border border-amber/50 font-semibold text-sm transition-all flex items-center justify-center space-x-2 shadow-lg"
             >
               <Lock className="w-4 h-4" />
-              <span>B2B Verification Gate</span>
+              <span>Clinical Access Gate</span>
             </button>
           </div>
 

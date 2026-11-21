@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { usePulseLink } from '../../context/PulseLinkContext';
 import type { UserCategory, PurposeOfVisit } from '../../types';
 import { 
-  Lock, 
   ChevronRight, 
   ShieldCheck, 
   ArrowRight, 
@@ -93,30 +92,13 @@ export const VerificationGatePage: React.FC = () => {
       {/* Container matching screenshot */}
       <div className="w-full max-w-xl mx-auto space-y-6">
         
-        {/* Top Status Pill - from screenshot 1 */}
+        {/* Top Status Pill - Clean without B2B */}
         <div className="flex justify-center">
           <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-bottle-950/90 border border-bottle-700 shadow-sm text-xs font-mono text-bone-200">
             <span className="w-2 h-2 rounded-full bg-sage animate-pulse" />
-            <span className="font-semibold text-bone-100">B2B:</span>
-            <span>{fullName || 'aditya chourasia'} ({workOrganisation || 'cafe'})</span>
+            <span className="font-medium text-bone-100">{fullName || 'aditya chourasia'} ({workOrganisation || 'manipal hospitals'})</span>
             <ChevronRight className="w-3.5 h-3.5 text-bone-300" />
           </div>
-        </div>
-
-        {/* Verification Gate Badge */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full border border-amber/70 bg-amber/10 text-amber font-mono text-[11px] uppercase tracking-widest font-semibold shadow-inner">
-            <Lock className="w-3.5 h-3.5" />
-            <span>B2B VERIFICATION GATE</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-bone-100 font-sans">
-            Access 360° Product Studio
-          </h1>
-
-          <p className="text-xs sm:text-sm text-bone-300 max-w-lg mx-auto leading-relaxed">
-            Direct coordination access for commercial hospital networks, emergency dispatch, regional blood banks, and verified essential medicine procurement.
-          </p>
         </div>
 
         {/* Quick-Fill Pill Bar for Convenience */}
