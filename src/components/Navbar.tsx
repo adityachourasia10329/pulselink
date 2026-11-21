@@ -13,7 +13,9 @@ import {
   ChevronRight,
   MapPin,
   Check,
-  Activity
+  Activity,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -32,6 +34,8 @@ export const Navbar: React.FC = () => {
     setSelectedCity,
     supportedCities,
     verificationUser,
+    audioMuted,
+    toggleAudioMute,
     currentTimeString,
     organTransfers,
     isExcursionActive
@@ -300,11 +304,24 @@ export const Navbar: React.FC = () => {
           {/* Right Action Tools: 6) IST Clock on left of profile + 3) Small Profile Option in Far Right Corner */}
           <div className="flex items-center space-x-2 shrink-0">
             
-            {/* 6) Live Clock IST (placed adjacently to the left of the profile option) */}
+            {/* Live Clock IST (placed adjacently to the left of the profile option) */}
             <div className="flex items-center space-x-1.5 text-xs font-mono text-bone-300 bg-bottle-950/70 px-2 py-1 rounded-lg border border-bottle-700/60 whitespace-nowrap shadow-sm">
               <Clock className="w-3.5 h-3.5 text-sage" />
               <span>{currentTimeString || '23:42:00 IST'}</span>
             </div>
+
+            {/* Audio Toggle Button - Functional Sound Cue Controller */}
+            <button
+              onClick={toggleAudioMute}
+              title={audioMuted ? "Unmute Command Audio Telemetry" : "Mute Command Audio Telemetry"}
+              className={`p-1.5 rounded-lg border transition-all ${
+                audioMuted 
+                  ? 'border-bottle-700 text-bone-400 hover:text-bone-200 bg-bottle-950/60' 
+                  : 'border-sage/40 bg-bottle-700/40 text-sage hover:bg-bottle-700/60'
+              }`}
+            >
+              {audioMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            </button>
 
             {/* 3) Small Profile Option (Far Right Corner - displays details ONLY when clicked) */}
             <div className="relative">
