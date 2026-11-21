@@ -430,22 +430,22 @@ export const MedicineNetwork: React.FC = () => {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={telemetryData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
                 {/* Safe Temperature Band Shading (2°C to 8°C) */}
-                <ReferenceArea y1={2} y2={8} fill="#4ADE80" fillOpacity={0.07} />
+                <ReferenceArea y1={2} y2={8} fill="#2E7D32" fillOpacity={0.08} />
                 
                 {/* Threshold Line at 8°C */}
                 <ReferenceLine y={8} stroke="#0C45B0" strokeDasharray="3 3" label={{ value: 'Max Safe: 8°C', fill: '#0C45B0', fontSize: 10, position: 'right' }} />
-                <ReferenceLine y={2} stroke="#4ADE80" strokeDasharray="3 3" label={{ value: 'Min Safe: 2°C', fill: '#4ADE80', fontSize: 10, position: 'right' }} />
+                <ReferenceLine y={2} stroke="#2E7D32" strokeDasharray="3 3" label={{ value: 'Min Safe: 2°C', fill: '#2E7D32', fontSize: 10, position: 'right' }} />
 
                 <XAxis 
                   dataKey="time" 
-                  stroke="#C8BFA8" 
+                  stroke="var(--color-text-muted)" 
                   fontSize={10} 
                   tickLine={false} 
                   fontFamily="monospace"
                 />
                 <YAxis 
                   domain={[0, 14]} 
-                  stroke="#C8BFA8" 
+                  stroke="var(--color-text-muted)" 
                   fontSize={10} 
                   tickLine={false} 
                   unit="°C"
@@ -453,10 +453,10 @@ export const MedicineNetwork: React.FC = () => {
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#09241C', 
-                    borderColor: '#164A3B', 
+                    backgroundColor: 'var(--color-surface)', 
+                    borderColor: 'var(--color-border)', 
                     borderRadius: '8px',
-                    color: '#EFE7DA',
+                    color: 'var(--color-text-primary)',
                     fontSize: '11px',
                     fontFamily: 'monospace'
                   }}
@@ -465,9 +465,9 @@ export const MedicineNetwork: React.FC = () => {
                 <Line 
                   type="monotone" 
                   dataKey="temperature" 
-                  stroke={isExcursionActive ? '#0C45B0' : '#4ADE80'} 
+                  stroke={isExcursionActive ? '#0C45B0' : '#2E7D32'} 
                   strokeWidth={2.5} 
-                  dot={{ r: 3, fill: isExcursionActive ? '#0C45B0' : '#4ADE80' }}
+                  dot={{ r: 3, fill: isExcursionActive ? '#0C45B0' : '#2E7D32' }}
                   isAnimationActive={false}
                 />
               </LineChart>

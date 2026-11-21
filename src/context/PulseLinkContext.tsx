@@ -1,25 +1,25 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { 
-  UserRole, 
-  UserProfile, 
-  CorridorRoute, 
-  OrganViabilityItem, 
-  BloodInventoryItem, 
-  BloodRequestItem, 
-  MedicineBatch, 
-  TelemetryPoint, 
-  FairRouteCandidate, 
-  ClearChainBlock 
+import type {
+  UserRole,
+  UserProfile,
+  CorridorRoute,
+  OrganViabilityItem,
+  BloodInventoryItem,
+  BloodRequestItem,
+  MedicineBatch,
+  TelemetryPoint,
+  FairRouteCandidate,
+  ClearChainBlock
 } from '../types';
-import { 
-  USER_PROFILES, 
-  INITIAL_CORRIDORS, 
-  INITIAL_ORGANS, 
-  INITIAL_BLOOD_BANKS, 
-  INITIAL_BLOOD_REQUESTS, 
-  INITIAL_MEDICINES, 
-  INITIAL_TELEMETRY, 
-  INITIAL_FAIRROUTE_CANDIDATES, 
+import {
+  USER_PROFILES,
+  INITIAL_CORRIDORS,
+  INITIAL_ORGANS,
+  INITIAL_BLOOD_BANKS,
+  INITIAL_BLOOD_REQUESTS,
+  INITIAL_MEDICINES,
+  INITIAL_TELEMETRY,
+  INITIAL_FAIRROUTE_CANDIDATES,
   INITIAL_AUDIT_BLOCKS
 } from '../data/mockData';
 import { soundFx } from '../utils/audio';
@@ -86,6 +86,10 @@ interface PulseLinkContextType {
   audioMuted: boolean;
   toggleAudioMute: () => void;
   currentTimeString: string;
+
+  // Theme Mode (Sand Editorial vs Terracotta Dark)
+  themeMode: 'sand' | 'terracotta_dark';
+  toggleThemeMode: () => void;
 }
 
 const PulseLinkContext = createContext<PulseLinkContextType | undefined>(undefined);
@@ -107,6 +111,21 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [auditBlocks, setAuditBlocks] = useState<ClearChainBlock[]>(INITIAL_AUDIT_BLOCKS);
   const [audioMuted, setAudioMuted] = useState<boolean>(false);
   const [currentTimeString, setCurrentTimeString] = useState<string>('');
+  const [themeMode, setThemeMode] = useState<'sand' | 'terracotta_dark'>('sand');
+
+  const toggleThemeMode = () => {
+    setThemeMode(prev => prev === 'sand' ? 'terracotta_dark' : 'sand');
+  };
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (themeMode === 'terracotta_dark') {
+        document.documentElement.setAttribute('data-theme', 'terracotta-dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    }
+  }, [themeMode]);
 
   const currentUser = USER_PROFILES.find(p => p.role === currentRole) || USER_PROFILES[0];
 
@@ -188,8 +207,8 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             ...corr,
             currentPosition: { lat: newLat, lng: newLng },
             waypointIndex: updatedIndex,
-            currentSpeedKmh: corr.policeClearanceActive 
-              ? Math.floor(74 + Math.sin(Date.now() / 3000) * 8) 
+            currentSpeedKmh: corr.policeClearanceActive
+              ? Math.floor(74 + Math.sin(Date.now() / 3000) * 8)
               : Math.floor(52 + Math.sin(Date.now() / 3000) * 6)
           };
         }
@@ -206,7 +225,7 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setTelemetryData(prev => {
         const last = prev[prev.length - 1];
         const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-        
+
         let targetTemp: number;
         if (isExcursionActive) {
           // Excursion elevated temp with jitter
@@ -235,8 +254,8 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [isExcursionActive]);
 
   // Current temperature getter
-  const currentTemp = telemetryData.length > 0 
-    ? telemetryData[telemetryData.length - 1].temperature 
+  const currentTemp = telemetryData.length > 0
+    ? telemetryData[telemetryData.length - 1].temperature
     : 4.2;
 
   // Toggle Traffic Police Clearance
@@ -245,7 +264,7 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!corr) return;
 
     const nextState = !corr.policeClearanceActive;
-    
+
     setCorridors(prev => prev.map(c => {
       if (c.id === corridorId) {
         return {
@@ -294,7 +313,7 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // Find bank with stock
     const matchingBank = bloodBanks.find(b => (b.stock[params.bloodGroup] || 0) >= params.units) || bloodBanks[2]; // Rashtrotthana has high stock
-    
+
     const newReqId = `req-b-${Math.floor(100 + Math.random() * 900)}`;
     const newRequest: BloodRequestItem = {
       id: newReqId,
@@ -495,7 +514,9 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       addAuditLog,
       audioMuted,
       toggleAudioMute,
-      currentTimeString
+      currentTimeString,
+      themeMode,
+      toggleThemeMode
     }}>
       {children}
     </PulseLinkContext.Provider>

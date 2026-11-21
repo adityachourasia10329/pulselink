@@ -3,15 +3,46 @@
 @tailwind utilities;
 
 :root {
+  /* Default: Sand Editorial Theme (From User Swatch: Sand #DFBFA0, Terracotta #7A3E20, Cobalt #0C45B0) */
+  --color-bg: #F4ECE1;
+  --color-surface: #FDFBF7;
+  --color-well: #EADCCF;
+  --color-border: #DFCBB8;
+  --color-border-elevated: #C49E80;
+  --color-text-primary: #38180A;
+  --color-text-secondary: #5C2C16;
+  --color-text-muted: #854E33;
+  --color-text-faint: #A6755C;
+  --color-cobalt: #0C45B0;
+  --color-terracotta: #7A3E20;
+  --color-sand: #DFBFA0;
+  color-scheme: light;
+}
+
+[data-theme="terracotta-dark"] {
+  /* Terracotta Dark Variation */
+  --color-bg: #1B0C06;
+  --color-surface: #2A140B;
+  --color-well: #140703;
+  --color-border: #4A2415;
+  --color-border-elevated: #6B351E;
+  --color-text-primary: #FAF3EC;
+  --color-text-secondary: #EADCCF;
+  --color-text-muted: #DFBFA0;
+  --color-text-faint: #B59374;
+  --color-cobalt: #0C45B0;
+  --color-terracotta: #944D2B;
+  --color-sand: #DFBFA0;
   color-scheme: dark;
 }
 
 body {
   margin: 0;
-  background-color: #0F372B;
-  color: #EFE7DA;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom Scrollbars */
@@ -20,31 +51,31 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #09241C;
+  background: var(--color-well);
 }
 ::-webkit-scrollbar-thumb {
-  background: #164A3B;
+  background: var(--color-border-elevated);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2A7A63;
+  background: var(--color-terracotta);
 }
 
-/* Leaflet Dark & Bottle-Green custom styling */
+/* Leaflet Sand & Terracotta styling */
 .leaflet-container {
-  background-color: #09241C !important;
+  background-color: var(--color-surface) !important;
   font-family: inherit;
 }
 
 .dark-tiles {
-  filter: invert(100%) hue-rotate(140deg) brightness(85%) contrast(90%) saturate(85%);
+  filter: sepia(35%) hue-rotate(345deg) brightness(96%) contrast(92%);
 }
 
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-  background: #09241C !important;
-  color: #EFE7DA !important;
-  border: 1px solid #164A3B !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: 0 10px 25px -5px rgba(60, 25, 10, 0.15) !important;
   border-radius: 8px !important;
 }
 
@@ -53,17 +84,15 @@ body {
   line-height: 1.4 !important;
 }
 
-/* Card Glow Utilities */
+/* Card Utilities */
 .glass-panel {
-  background-color: rgba(9, 36, 28, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(22, 74, 59, 0.7);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
 }
 
 .glass-panel-elevated {
-  background-color: rgba(22, 74, 59, 0.9);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(239, 231, 218, 0.15);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-elevated);
 }
 
 /* Pulse Animation for Critical States */

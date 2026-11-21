@@ -9,7 +9,8 @@ import {
   Clock, 
   Flame,
   LayoutDashboard,
-  Home
+  Home,
+  Palette
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -24,7 +25,9 @@ export const Navbar: React.FC = () => {
     toggleAudioMute,
     currentTimeString,
     organTransfers,
-    isExcursionActive
+    isExcursionActive,
+    themeMode,
+    toggleThemeMode
   } = usePulseLink();
 
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
@@ -122,6 +125,18 @@ export const Navbar: React.FC = () => {
               <Clock className="w-3.5 h-3.5 text-sage" />
               <span>{currentTimeString || '23:42:00 IST'}</span>
             </div>
+
+            {/* Theme Mode Toggle (Sand Editorial vs Terracotta Dark) */}
+            <button
+              onClick={toggleThemeMode}
+              title={themeMode === 'sand' ? "Switch to Terracotta Dark Theme" : "Switch to Sand Editorial Theme"}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-bottle-700 bg-bottle-950 text-xs font-mono text-bone-200 hover:border-bottle-600 hover:text-bone-100 transition-colors"
+            >
+              <Palette className="w-3.5 h-3.5 text-cobalt" />
+              <span className="hidden md:inline text-[11px]">
+                {themeMode === 'sand' ? 'Sand' : 'Terracotta Dark'}
+              </span>
+            </button>
 
             {/* Audio Toggle */}
             <button
