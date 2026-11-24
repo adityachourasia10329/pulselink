@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { usePulseLink } from '../../context/PulseLinkContext';
 import type { UserCategory, PurposeOfVisit, VerificationUserData } from '../../types';
 import { 
-  ChevronRight, 
   ShieldCheck, 
   ArrowRight, 
   CheckCircle2, 
@@ -11,10 +10,8 @@ import {
   Mail, 
   MapPin, 
   Phone,
-  Sparkles,
-  Zap,
-  RotateCcw,
-  ClipboardList
+  Bookmark,
+  Trash2
 } from 'lucide-react';
 
 export const VerificationGatePage: React.FC = () => {
@@ -25,7 +22,7 @@ export const VerificationGatePage: React.FC = () => {
     setActiveTab 
   } = usePulseLink();
 
-  // Load initial state from localStorage or context verificationUser for fast filing
+  // Load initial state from localStorage on this device or context
   const getInitialState = (): VerificationUserData => {
     try {
       const saved = localStorage.getItem('pulselink_verification_gate');
@@ -38,14 +35,13 @@ export const VerificationGatePage: React.FC = () => {
     }
     return (
       verificationUser || {
-        fullName: 'aditya chourasia',
-        email: 'aditya.chourasia10329@gmail.com',
-        workOrganisation: 'cafe',
+        fullName: '',
+        email: '',
+        workOrganisation: '',
         city: 'Bengaluru',
         userCategory: 'medical_staff',
         purposeOfVisit: 'requesting',
-        phoneWhatsapp: '9313264332',
-        queryRequirements: 'printing on 150 ml cups',
+        phoneWhatsapp: '',
         verifiedAt: new Date().toISOString()
       }
     );
@@ -53,18 +49,31 @@ export const VerificationGatePage: React.FC = () => {
 
   const initial = getInitialState();
 
-  const [fullName, setFullName] = useState(initial.fullName || 'aditya chourasia');
-  const [workOrganisation, setWorkOrganisation] = useState(initial.workOrganisation || 'cafe');
-  const [email, setEmail] = useState(initial.email || 'aditya.chourasia10329@gmail.com');
+  const [fullName, setFullName] = useState(initial.fullName || '');
+  const [phone, setPhone] = useState(initial.phoneWhatsapp || '');
+  const [email, setEmail] = useState(initial.email || '');
+  const [workOrganisation, setWorkOrganisation] = useState(initial.workOrganisation || '');
   const [city, setCity] = useState(initial.city || 'Bengaluru');
-  const [phone, setPhone] = useState(initial.phoneWhatsapp || '9313264332');
   const [userCategory, setUserCategory] = useState<UserCategory>(initial.userCategory || 'medical_staff');
   const [purposeOfVisit, setPurposeOfVisit] = useState<PurposeOfVisit>(initial.purposeOfVisit || 'requesting');
-  const [queryRequirements, setQueryRequirements] = useState(initial.queryRequirements || 'printing on 150 ml cups');
 
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
-  // Automatically save details and choices on change so every time the site is opened or reloaded they are preserved
+  // Load ONLY presets entered on this particular device (never dummy or someone else's details)
+  const [devicePresets, setDevicePresets] = useState<VerificationUserData[]>(() => {
+    try {
+      const raw = localStorage.getItem('pulselink_device_saved_profiles');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
+
+  // Automatically sync current form choices into localStorage on this device
   useEffect(() => {
     const currentData: VerificationUserData = {
       fullName,
@@ -74,7 +83,6 @@ export const VerificationGatePage: React.FC = () => {
       phoneWhatsapp: phone,
       userCategory,
       purposeOfVisit,
-      queryRequirements,
       verifiedAt: new Date().toISOString()
     };
     try {
@@ -82,22 +90,59 @@ export const VerificationGatePage: React.FC = () => {
     } catch {
       // ignore
     }
-  }, [fullName, email, workOrganisation, city, phone, userCategory, purposeOfVisit, queryRequirements]);
+  }, [fullName, email, workOrganisation, city, phone, userCategory, purposeOfVisit]);
+
+  const saveToDevicePresets = (profile: VerificationUserData) => {
+    try {
+      const raw = localStorage.getItem('pulselink_device_saved_profiles');
+      let list: VerificationUserData[] = raw ? JSON.parse(raw) : [];
+      // Remove matching entry if already present
+      list = list.filter(p => !(p.email === profile.email && p.fullName === profile.fullName));
+      list.unshift(profile);
+      if (list.length > 3) list = list.slice(0, 3);
+      localStorage.setItem('pulselink_device_saved_profiles', JSON.stringify(list));
+      setDevicePresets(list);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleApplyPreset = (preset: VerificationUserData) => {
+    setFullName(preset.fullName || '');
+    setPhone(preset.phoneWhatsapp || '');
+    setEmail(preset.email || '');
+    setWorkOrganisation(preset.workOrganisation || '');
+    setCity(preset.city || 'Bengaluru');
+    if (preset.userCategory) setUserCategory(preset.userCategory);
+    if (preset.purposeOfVisit) setPurposeOfVisit(preset.purposeOfVisit);
+  };
+
+  const handleDeleteDevicePreset = (indexToDelete: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = devicePresets.filter((_, idx) => idx !== indexToDelete);
+    setDevicePresets(updated);
+    try {
+      localStorage.setItem('pulselink_device_saved_profiles', JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const submissionData: VerificationUserData = {
-      fullName: fullName.trim() || 'aditya chourasia',
-      email: email.trim() || 'aditya.chourasia10329@gmail.com',
-      workOrganisation: workOrganisation.trim() || 'cafe',
+      fullName: fullName.trim() || 'Guest User',
+      email: email.trim() || 'contact@pulselink.in',
+      workOrganisation: workOrganisation.trim() || 'Independent / Hospital Network',
       city: city.trim() || 'Bengaluru',
       userCategory,
       purposeOfVisit,
-      phoneWhatsapp: phone.trim() || '9313264332',
-      queryRequirements: queryRequirements.trim(),
+      phoneWhatsapp: phone.trim(),
       verifiedAt: new Date().toISOString()
     };
 
+    // Save to this device's presets
+    saveToDevicePresets(submissionData);
     submitVerification(submissionData);
     setSubmittedSuccess(true);
     setTimeout(() => {
@@ -106,240 +151,62 @@ export const VerificationGatePage: React.FC = () => {
     }, 450);
   };
 
-  const handleResetDefaults = () => {
-    const defaultData: VerificationUserData = {
-      fullName: 'aditya chourasia',
-      email: 'aditya.chourasia10329@gmail.com',
-      workOrganisation: 'cafe',
-      city: 'Bengaluru',
-      phoneWhatsapp: '9313264332',
-      userCategory: 'medical_staff',
-      purposeOfVisit: 'requesting',
-      queryRequirements: 'printing on 150 ml cups',
-      verifiedAt: new Date().toISOString()
-    };
-    setFullName(defaultData.fullName);
-    setWorkOrganisation(defaultData.workOrganisation);
-    setEmail(defaultData.email);
-    setCity(defaultData.city);
-    setPhone(defaultData.phoneWhatsapp || '');
-    setUserCategory(defaultData.userCategory);
-    setPurposeOfVisit(defaultData.purposeOfVisit);
-    setQueryRequirements(defaultData.queryRequirements || '');
-  };
-
-  const handleQuickFill = (role: 'aditya_cafe' | 'doctor' | 'police' | 'patient') => {
-    if (role === 'aditya_cafe') {
-      setFullName('aditya chourasia');
-      setEmail('aditya.chourasia10329@gmail.com');
-      setWorkOrganisation('cafe');
-      setCity('Bengaluru');
-      setPhone('9313264332');
-      setUserCategory('medical_staff');
-      setPurposeOfVisit('requesting');
-      setQueryRequirements('printing on 150 ml cups');
-    } else if (role === 'doctor') {
-      setFullName('Dr. Ananya Rao, M.S.');
-      setEmail('ananya.rao@manipal.edu');
-      setWorkOrganisation('Manipal Hospital & Research Institute');
-      setCity('Bengaluru');
-      setPhone('+91 98860 12345');
-      setUserCategory('medical_staff');
-      setPurposeOfVisit('requesting');
-      setQueryRequirements('Emergency heart cold-chain ischemia transport window < 60m');
-    } else if (role === 'police') {
-      setFullName('Insp. S. Vijay Kumar');
-      setEmail('traffic.dispatch@ksp.gov.in');
-      setWorkOrganisation('Bengaluru City Traffic Police (Clearance Div)');
-      setCity('Bengaluru');
-      setPhone('+91 94490 88765');
-      setUserCategory('gov_employee');
-      setPurposeOfVisit('responding');
-      setQueryRequirements('Green corridor arterial signal preemption & route clearance');
-    } else {
-      setFullName('Rajesh & Priya Sharma');
-      setEmail('priya.sharma99@gmail.com');
-      setWorkOrganisation('Patient Recipient Kin (Fortis)');
-      setCity('Bengaluru');
-      setPhone('+91 98450 44321');
-      setUserCategory('patient_family');
-      setPurposeOfVisit('inquiry');
-      setQueryRequirements('Liver donor recipient queue priority & MELD score status');
-    }
-  };
-
   return (
-    <div className="min-h-[85vh] flex flex-col items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-[85vh] flex flex-col items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
       
-      {/* Container matching screenshot */}
       <div className="w-full max-w-xl mx-auto space-y-6">
         
-        {/* Top Status Pill - Clean without B2B */}
-        <div className="flex justify-center">
-          <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-bottle-950/90 border border-bottle-700 shadow-sm text-xs font-mono text-bone-200">
-            <span className="w-2 h-2 rounded-full bg-sage animate-pulse" />
-            <span className="font-medium text-bone-100">{fullName || 'aditya chourasia'} ({workOrganisation || 'cafe'})</span>
-            <ChevronRight className="w-3.5 h-3.5 text-bone-300" />
+        {/* 1) NEW LOGO DISPLAY AT TOP (India map with tricolor, road ring with heart, and PulseLink brand) */}
+        <div className="flex flex-col items-center justify-center text-center space-y-2">
+          <div className="bg-white p-3 rounded-2xl shadow-xl border border-bone-400/20 max-w-[240px] hover:scale-105 transition-transform duration-200">
+            <img 
+              src="/pulselink-logo.jpg" 
+              alt="PulseLink — Indian Medical Logistics & Emergency Corridor Grid" 
+              className="w-full h-auto object-contain"
+            />
           </div>
+          <p className="text-xs text-bone-300 font-mono tracking-wide">
+            Unified National Medical Logistics &amp; Emergency Corridor Grid
+          </p>
         </div>
 
-        {/* Saved Fast-Filing Notification Banner */}
-        <div className="bg-bottle-950/80 border border-sage/30 rounded-xl px-3.5 py-2 flex items-center justify-between text-xs shadow-inner">
-          <div className="flex items-center space-x-2 text-sage">
-            <Zap className="w-3.5 h-3.5 text-sage shrink-0" />
-            <span className="font-mono text-[11px] text-bone-200">
-              Details &amp; choices auto-saved for fast filing on every visit &amp; reload
+        {/* 2) QUICK PRESETS: Only show profiles entered on THIS particular device */}
+        {devicePresets.length > 0 && (
+          <div className="bg-bottle-900/60 border border-bottle-700/60 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2">
+            <span className="font-mono text-[11px] text-bone-300 flex items-center space-x-1.5 pl-1">
+              <Bookmark className="w-3.5 h-3.5 text-sage" />
+              <span>Saved on this device:</span>
             </span>
+            <div className="flex flex-wrap gap-1.5">
+              {devicePresets.map((preset, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => handleApplyPreset(preset)}
+                  className="group inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-bottle-950 border border-bottle-700 hover:border-cobalt text-bone-200 hover:text-bone-100 text-[11px] transition-all cursor-pointer"
+                  title="Click to fill form with this device's saved details"
+                >
+                  <span className="font-medium max-w-[140px] truncate">{preset.fullName} ({preset.workOrganisation || preset.city})</span>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteDevicePreset(idx, e)}
+                    className="text-bone-400 hover:text-vermilion ml-1 p-0.5 rounded transition-colors"
+                    title="Remove this profile from this device"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={handleResetDefaults}
-            title="Reset form fields to default"
-            className="flex items-center space-x-1 text-[11px] text-bone-400 hover:text-bone-200 font-mono transition-colors ml-2 shrink-0"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Reset</span>
-          </button>
-        </div>
+        )}
 
-        {/* Quick-Fill Pill Bar for Convenience */}
-        <div className="bg-bottle-900/60 border border-bottle-700/60 rounded-xl p-2.5 flex items-center justify-between text-xs">
-          <span className="font-mono text-[11px] text-bone-400 flex items-center space-x-1 pl-1">
-            <Sparkles className="w-3 h-3 text-cobalt" />
-            <span>Quick Presets:</span>
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => handleQuickFill('aditya_cafe')}
-              className="px-2 py-0.5 rounded-md bg-bottle-950 border border-bottle-700 hover:border-cobalt text-bone-200 hover:text-bone-100 text-[11px] transition-colors"
-            >
-              Aditya (SS Match)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('doctor')}
-              className="px-2 py-0.5 rounded-md bg-bottle-950 border border-bottle-700 hover:border-cobalt text-bone-200 hover:text-bone-100 text-[11px] transition-colors"
-            >
-              Surgeon
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('police')}
-              className="px-2 py-0.5 rounded-md bg-bottle-950 border border-bottle-700 hover:border-cobalt text-bone-200 hover:text-bone-100 text-[11px] transition-colors"
-            >
-              Traffic Dispatch
-            </button>
-          </div>
-        </div>
-
-        {/* Main Verification Form */}
+        {/* Form Container with strict ordering as requested */}
         <form onSubmit={handleSubmit} className="space-y-5 bg-bottle-900/80 border border-bottle-700 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-2xl">
           
-          {/* Field: Full Name */}
-          <div className="space-y-1.5">
+          {/* STEP 1: Are you? Question with options */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <label htmlFor="fullName" className="font-medium text-bone-200 flex items-center space-x-1.5">
-                <User className="w-3.5 h-3.5 text-bone-400" />
-                <span>Full Name</span>
-              </label>
-              <span className="text-amber font-semibold text-[11px]">* Required</span>
-            </div>
-            <input
-              id="fullName"
-              type="text"
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="e.g. aditya chourasia"
-              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
-            />
-          </div>
-
-          {/* Field: Type of Business / Work Organisation */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <label htmlFor="workOrg" className="font-medium text-bone-200 flex items-center space-x-1.5">
-                <Building2 className="w-3.5 h-3.5 text-bone-400" />
-                <span>Type of Business</span>
-              </label>
-              <span className="text-amber font-semibold text-[11px]">* Required</span>
-            </div>
-            <input
-              id="workOrg"
-              type="text"
-              required
-              value={workOrganisation}
-              onChange={(e) => setWorkOrganisation(e.target.value)}
-              placeholder="e.g. cafe"
-              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
-            />
-          </div>
-
-          {/* Field: Corporate / Business Email ID */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <label htmlFor="email" className="font-medium text-bone-200 flex items-center space-x-1.5">
-                <Mail className="w-3.5 h-3.5 text-bone-400" />
-                <span>Corporate / Business Email ID</span>
-              </label>
-              <span className="text-amber font-semibold text-[11px]">* Required</span>
-            </div>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. aditya.chourasia10329@gmail.com"
-              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
-            />
-          </div>
-
-          {/* Field: City */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <label htmlFor="city" className="font-medium text-bone-200 flex items-center space-x-1.5">
-                <MapPin className="w-3.5 h-3.5 text-bone-400" />
-                <span>City</span>
-              </label>
-              <span className="text-amber font-semibold text-[11px]">* Required</span>
-            </div>
-            <input
-              id="city"
-              type="text"
-              required
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="e.g. Bengaluru"
-              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
-            />
-          </div>
-
-          {/* Field: Direct Phone / WhatsApp */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <label htmlFor="phone" className="font-medium text-bone-200 flex items-center space-x-1.5">
-                <Phone className="w-3.5 h-3.5 text-bone-400" />
-                <span>Direct Phone / WhatsApp</span>
-              </label>
-              <span className="text-amber font-semibold text-[11px]">* Required</span>
-            </div>
-            <input
-              id="phone"
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="e.g. 9313264332"
-              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
-            />
-          </div>
-
-          {/* QUESTION (e) - Are you (patient / medical staff / Gov employee / other) */}
-          <div className="space-y-2 pt-2 border-t border-bottle-700/60">
-            <div className="flex items-center justify-between text-xs">
-              <label className="font-medium text-bone-100 text-sm">
+              <label className="font-semibold text-bone-100 text-sm">
                 Are you?
               </label>
               <span className="text-amber font-semibold text-[11px]">* Required</span>
@@ -371,12 +238,121 @@ export const VerificationGatePage: React.FC = () => {
             </div>
           </div>
 
-          {/* QUESTION (f) - Purpose of visit */}
-          <div className="space-y-2 pt-2 border-t border-bottle-700/60">
+          {/* STEP 2: Full Name */}
+          <div className="space-y-1.5 pt-2 border-t border-bottle-700/60">
             <div className="flex items-center justify-between text-xs">
-              <label className="font-medium text-bone-100 text-sm">
-                Purpose of visit
+              <label htmlFor="fullName" className="font-medium text-bone-200 flex items-center space-x-1.5">
+                <User className="w-3.5 h-3.5 text-bone-400" />
+                <span>Full Name</span>
               </label>
+              <span className="text-amber font-semibold text-[11px]">* Required</span>
+            </div>
+            <input
+              id="fullName"
+              type="text"
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="e.g. Dr. Ananya Rao / Rajesh Sharma"
+              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
+            />
+          </div>
+
+          {/* STEP 3: Contact Number (WhatsApp number is preferable) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <label htmlFor="phone" className="font-medium text-bone-200 flex items-center space-x-1.5">
+                <Phone className="w-3.5 h-3.5 text-bone-400" />
+                <span>Contact Number (WhatsApp number is preferable)</span>
+              </label>
+              <span className="text-amber font-semibold text-[11px]">* Required</span>
+            </div>
+            <input
+              id="phone"
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. +91 98860 12345"
+              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
+            />
+          </div>
+
+          {/* STEP 4: Corporate / Business Email ID */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <label htmlFor="email" className="font-medium text-bone-200 flex items-center space-x-1.5">
+                <Mail className="w-3.5 h-3.5 text-bone-400" />
+                <span>Corporate / Business Email ID</span>
+              </label>
+              <span className="text-amber font-semibold text-[11px]">* Required</span>
+            </div>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. coordinator@manipal.edu"
+              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
+            />
+          </div>
+
+          {/* STEP 5: Name of the Organisation (Changed from Type of business) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <label htmlFor="workOrg" className="font-medium text-bone-200 flex items-center space-x-1.5">
+                <Building2 className="w-3.5 h-3.5 text-bone-400" />
+                <span>Name of the Organisation</span>
+              </label>
+              <span className="text-amber font-semibold text-[11px]">* Required</span>
+            </div>
+            <input
+              id="workOrg"
+              type="text"
+              required
+              value={workOrganisation}
+              onChange={(e) => setWorkOrganisation(e.target.value)}
+              placeholder="e.g. Manipal Hospital, City Blood Bank, Apollo Clinic"
+              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
+            />
+          </div>
+
+          {/* STEP 6: City */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <label htmlFor="city" className="font-medium text-bone-200 flex items-center space-x-1.5">
+                <MapPin className="w-3.5 h-3.5 text-bone-400" />
+                <span>City</span>
+              </label>
+              <span className="text-amber font-semibold text-[11px]">* Required</span>
+            </div>
+            <input
+              id="city"
+              type="text"
+              required
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="e.g. Bengaluru, Mumbai, Delhi"
+              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-3 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans"
+            />
+          </div>
+
+          {/* STEP 7: What brings you to PulseLink (with the logo) */}
+          <div className="space-y-2 pt-3 border-t border-bottle-700/60">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2">
+                <div className="bg-white p-1 rounded-md shadow-sm border border-bone-300/40 shrink-0">
+                  <img 
+                    src="/pulselink-logo.jpg" 
+                    alt="PulseLink Logo" 
+                    className="h-5 w-auto object-contain" 
+                  />
+                </div>
+                <label className="font-semibold text-bone-100 text-sm">
+                  What brings you to PulseLink?
+                </label>
+              </div>
               <span className="text-amber font-semibold text-[11px]">* Required</span>
             </div>
             
@@ -405,26 +381,6 @@ export const VerificationGatePage: React.FC = () => {
                 );
               })}
             </div>
-          </div>
-
-          {/* Field: Your Query / Estimated Requirements (Matches Screenshot 1) */}
-          <div className="space-y-1.5 pt-2 border-t border-bottle-700/60">
-            <div className="flex items-center justify-between text-xs">
-              <label htmlFor="queryRequirements" className="font-medium text-bone-200 flex items-center space-x-1.5">
-                <ClipboardList className="w-3.5 h-3.5 text-bone-400" />
-                <span>Your Query / Estimated Requirements</span>
-              </label>
-              <span className="text-amber font-semibold text-[11px]">* Required</span>
-            </div>
-            <textarea
-              id="queryRequirements"
-              rows={2}
-              required
-              value={queryRequirements}
-              onChange={(e) => setQueryRequirements(e.target.value)}
-              placeholder="e.g. printing on 150 ml cups"
-              className="w-full bg-bottle-950 border border-bottle-700 focus:border-cobalt focus:ring-1 focus:ring-cobalt rounded-xl px-4 py-2.5 text-sm text-bone-100 placeholder-bone-400/60 outline-none transition-all shadow-inner font-sans resize-none"
-            />
           </div>
 
           {/* Submit Button */}

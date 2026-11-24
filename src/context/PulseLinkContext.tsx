@@ -158,7 +158,6 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       userCategory: 'medical_staff',
       purposeOfVisit: 'requesting',
       phoneWhatsapp: '9313264332',
-      queryRequirements: 'printing on 150 ml cups',
       verifiedAt: new Date().toISOString()
     };
   });

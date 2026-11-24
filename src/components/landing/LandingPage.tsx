@@ -29,6 +29,17 @@ export const LandingPage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8">
           
+          {/* New PulseLink India Tricolor & Heart Logo */}
+          <div className="flex justify-center">
+            <div className="bg-white p-3 sm:p-4 rounded-2xl shadow-2xl border border-bone-400/20 inline-block hover:scale-105 transition-transform duration-200">
+              <img 
+                src="/pulselink-logo.jpg" 
+                alt="PulseLink" 
+                className="h-16 sm:h-20 w-auto object-contain"
+              />
+            </div>
+          </div>
+
           {/* Top Tag */}
           <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-bottle-900 border border-bottle-700 shadow-lg">
             <span className="w-2 h-2 rounded-full bg-vermilion animate-ping" />

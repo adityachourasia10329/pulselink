@@ -13,7 +13,6 @@ import {
   ChevronRight,
   MapPin,
   Check,
-  Activity,
   Volume2,
   VolumeX
 } from 'lucide-react';
@@ -94,17 +93,20 @@ export const Navbar: React.FC = () => {
       <div className="w-full px-3 sm:px-5 lg:px-6">
         <div className="flex items-center justify-between h-14">
 
-          {/* Left Top Corner: PulseLink Logo & Medical Pulse Wave Symbol */}
+          {/* Left Top Corner: New PulseLink India Tricolor & Heart Logo */}
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             <button
               onClick={() => setViewMode('landing')}
-              className="flex items-center space-x-1.5 text-left group focus:outline-none"
+              className="flex items-center text-left group focus:outline-none"
               title="PulseLink Overview"
             >
-              <Activity className="w-4 h-4 text-cobalt shrink-0 group-hover:scale-110 transition-transform" />
-              <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-bone-100 group-hover:opacity-90 transition-opacity">
-                Pulse<span className="text-cobalt">Link</span>
-              </span>
+              <div className="bg-white px-2 py-0.5 rounded-lg shadow-md border border-bottle-700/60 group-hover:scale-105 transition-transform flex items-center h-9">
+                <img 
+                  src="/pulselink-logo.jpg" 
+                  alt="PulseLink" 
+                  className="h-7 w-auto object-contain" 
+                />
+              </div>
             </button>
 
             {/* City Selector Button with Dropdown */}
