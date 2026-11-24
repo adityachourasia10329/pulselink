@@ -181,7 +181,7 @@ export const DashboardLayout: React.FC = () => {
       </div>
 
       {/* Render Active View */}
-      <main className="transition-all duration-300">
+      <section className="transition-all duration-300">
         {activeTab === 'corridors' && <CorridorMap />}
         {activeTab === 'requests' && <RequestsHub />}
         {activeTab === 'medicine' && <MedicineNetwork />}
@@ -194,7 +194,7 @@ export const DashboardLayout: React.FC = () => {
         {activeTab === 'user_registrations' && <CommonUserViews activeSubMode="registrations" />}
         {activeTab === 'user_inquiries' && <CommonUserViews activeSubMode="inquiries" />}
         {activeTab === 'medical_reports' && <MedicalReportsView />}
-      </main>
+      </section>
 
     </div>
   );

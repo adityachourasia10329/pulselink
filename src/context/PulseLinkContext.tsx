@@ -71,6 +71,11 @@ interface PulseLinkContextType {
   activeSubFocus: 'all' | 'organ' | 'blood' | 'medicine';
   setActiveSubFocus: (focus: 'all' | 'organ' | 'blood' | 'medicine') => void;
 
+  // Sidebar Retractable State
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (open: boolean) => void;
+  toggleSidebar: () => void;
+
   // Gate & Waiting Area
   gateStatus: 'intake' | 'waiting' | 'approved';
   isGateApproved: boolean;
@@ -191,6 +196,28 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [gateGuardError, setGateGuardError] = useState<string | null>(null);
 
   const isGateApproved = gateStatus === 'approved';
+
+  // Retractable Sidebar State
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('pulselink_sidebar_open');
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('pulselink_sidebar_open', JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
 
   // Selected City Grid Operations
   const [selectedCity, setSelectedCityState] = useState<CityConfig>(() => {
@@ -977,6 +1004,9 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setActiveTab,
       activeSubFocus,
       setActiveSubFocus,
+      isSidebarOpen,
+      setIsSidebarOpen,
+      toggleSidebar,
       gateStatus,
       isGateApproved,
       gateGuardError,

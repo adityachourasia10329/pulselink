@@ -1,6 +1,7 @@
 import React from 'react';
 import { PulseLinkProvider, usePulseLink } from './context/PulseLinkContext';
 import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
 import { LandingPage } from './components/landing/LandingPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { VerificationGatePage } from './components/auth/VerificationGatePage';
@@ -11,14 +12,19 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-bottle-800 text-bone-100 flex flex-col font-sans selection:bg-vermilion selection:text-bone-50">
       <Navbar />
-      <div className="flex-1">
-        {viewMode === 'login' || !isGateApproved ? (
-          <VerificationGatePage />
-        ) : viewMode === 'landing' ? (
-          <LandingPage />
-        ) : (
-          <DashboardLayout />
-        )}
+      
+      {/* Main Container with Retractable Left Sidebar & Dynamic Layout Shift */}
+      <div className="flex-1 flex overflow-hidden relative">
+        <Sidebar />
+        <main className="flex-1 min-w-0 overflow-y-auto transition-all duration-300 ease-in-out">
+          {viewMode === 'login' || !isGateApproved ? (
+            <VerificationGatePage />
+          ) : viewMode === 'landing' ? (
+            <LandingPage />
+          ) : (
+            <DashboardLayout />
+          )}
+        </main>
       </div>
 
       {/* Persistent subtle footer governance badge */}
