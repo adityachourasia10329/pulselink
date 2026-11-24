@@ -1,10 +1,13 @@
 import React from 'react';
-import { usePulseLink } from '../../context/PulseLinkContext';
+import { usePulseLink, type PulseLinkTab } from '../../context/PulseLinkContext';
 import { CorridorMap } from './CorridorMap';
 import { RequestsHub } from './RequestsHub';
 import { MedicineNetwork } from './MedicineNetwork';
 import { FairRouteView } from './FairRouteView';
 import { AuditTrailView } from './AuditTrailView';
+import { GovernmentRegistriesView } from './GovernmentRegistriesView';
+import { CommonUserViews } from './CommonUserViews';
+import { MedicalReportsView } from './MedicalReportsView';
 import { 
   Navigation, 
   HeartHandshake, 
@@ -12,11 +15,17 @@ import {
   Scale, 
   FileCheck, 
   Thermometer, 
-  Activity
+  Activity, 
+  Building2, 
+  Users, 
+  CheckSquare, 
+  HelpCircle, 
+  FileText, 
+  Heart
 } from 'lucide-react';
 
 interface TabItem {
-  id: 'corridors' | 'requests' | 'medicine' | 'fairroute' | 'audit';
+  id: PulseLinkTab;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   count?: number;
@@ -33,17 +42,44 @@ export const DashboardLayout: React.FC = () => {
     organTransfers, 
     bloodRequests, 
     isExcursionActive, 
-    currentTemp 
+    currentTemp,
+    isCommonUser,
+    isMedicalStaff,
+    userInquiries,
+    allocationConsole
   } = usePulseLink();
 
-  const navigationTabs: TabItem[] = [
-    { id: 'corridors', label: 'Corridors & Map', icon: Navigation, count: corridors.filter(c => c.policeClearanceActive).length, countBadge: 'Active' },
-    { id: 'requests', label: 'Organ & Blood Hub', icon: HeartHandshake, count: organTransfers.length + bloodRequests.length, countBadge: 'Live' },
-    { id: 'medicine', label: 'Medicine & Cold-Chain', icon: Package, alert: isExcursionActive },
-    { id: 'fairroute', label: 'FairRoute Decision Support', icon: Scale },
-    { id: 'audit', label: 'ClearChain Audit', icon: FileCheck }
-  ];
+  // Role-tailored tabs
+  const getTabsForRole = (): TabItem[] => {
+    if (isCommonUser) {
+      return [
+        { id: 'user_availability', label: 'Availability (Organ, Blood, Meds)', icon: Heart, count: organTransfers.length + bloodRequests.length, countBadge: 'Live' },
+        { id: 'user_registrations', label: 'Government Registrations & Help', icon: FileText },
+        { id: 'user_inquiries', label: 'Direct Inquiries & Support', icon: HelpCircle, count: userInquiries.length }
+      ];
+    } else if (isMedicalStaff) {
+      return [
+        { id: 'requests', label: 'Responds & Requests Hub', icon: HeartHandshake, count: organTransfers.length + bloodRequests.length, countBadge: 'Live' },
+        { id: 'medicine', label: 'Medicines & Test-Kit', icon: Package, alert: isExcursionActive },
+        { id: 'medical_reports', label: 'Medical Files & Tests', icon: FileCheck },
+        { id: 'corridors', label: 'Command Center (ETA Tracking)', icon: Navigation }
+      ];
+    } else {
+      // Government Employee / PulseLink Ops
+      return [
+        { id: 'corridors', label: 'Command Center & Map', icon: Navigation, count: corridors.filter(c => c.policeClearanceActive).length, countBadge: 'Active' },
+        { id: 'requests', label: 'Organ & Blood Hub', icon: HeartHandshake, count: organTransfers.length + bloodRequests.length, countBadge: 'Live' },
+        { id: 'medicine', label: 'Medicine & Cold-Chain', icon: Package, alert: isExcursionActive },
+        { id: 'hospital_registry', label: 'Hospital Registry', icon: Building2 },
+        { id: 'patient_registry', label: 'Patient Registry', icon: Users },
+        { id: 'allocation_console', label: 'Allocation & Deallocation', icon: CheckSquare, count: allocationConsole.filter(a => a.officerApprovalStatus === 'PENDING').length, countBadge: 'Pending' },
+        { id: 'fairroute', label: 'FairRoute Decision Support', icon: Scale },
+        { id: 'audit', label: 'ClearChain Audit', icon: FileCheck }
+      ];
+    }
+  };
 
+  const navigationTabs = getTabsForRole();
   const urgentOrgan = organTransfers.find(o => o.remainingSeconds < 3600);
 
   return (
@@ -59,7 +95,11 @@ export const DashboardLayout: React.FC = () => {
             <span className="text-bone-400">({currentUser.badgeId})</span>
           </div>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-bone-100 mt-1">
-            PulseLink Emergency Operations Console
+            {isCommonUser 
+              ? 'PulseLink Patient & Family Support Console'
+              : isMedicalStaff 
+              ? 'PulseLink Hospital Medical Staff Console'
+              : 'PulseLink Emergency Operations Console'}
           </h1>
           <p className="text-xs text-bone-300 font-mono mt-0.5">
             Node: {currentUser.institution}
@@ -69,14 +109,16 @@ export const DashboardLayout: React.FC = () => {
         {/* Live Status Indicators */}
         <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
           
-          {/* Corridors status */}
-          <div className="bg-bottle-950 px-3 py-2 rounded-xl border border-bottle-800 flex items-center space-x-2">
-            <Navigation className="w-4 h-4 text-sage" />
-            <div>
-              <span className="text-bone-400 block text-[10px]">Green Corridors</span>
-              <span className="font-bold text-bone-100">{corridors.filter(c => c.policeClearanceActive).length} Active</span>
+          {/* Corridors status (hidden from Common Users) */}
+          {!isCommonUser && (
+            <div className="bg-bottle-950 px-3 py-2 rounded-xl border border-bottle-800 flex items-center space-x-2">
+              <Navigation className="w-4 h-4 text-sage" />
+              <div>
+                <span className="text-bone-400 block text-[10px]">Green Corridors</span>
+                <span className="font-bold text-bone-100">{corridors.filter(c => c.policeClearanceActive).length} Active</span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Organs in transit */}
           <div className={`px-3 py-2 rounded-xl border flex items-center space-x-2 ${
@@ -145,6 +187,13 @@ export const DashboardLayout: React.FC = () => {
         {activeTab === 'medicine' && <MedicineNetwork />}
         {activeTab === 'fairroute' && <FairRouteView />}
         {activeTab === 'audit' && <AuditTrailView />}
+        {activeTab === 'hospital_registry' && <GovernmentRegistriesView initialSection="hospital" />}
+        {activeTab === 'patient_registry' && <GovernmentRegistriesView initialSection="patient" />}
+        {activeTab === 'allocation_console' && <GovernmentRegistriesView initialSection="allocation" />}
+        {activeTab === 'user_availability' && <CommonUserViews activeSubMode="availability" />}
+        {activeTab === 'user_registrations' && <CommonUserViews activeSubMode="registrations" />}
+        {activeTab === 'user_inquiries' && <CommonUserViews activeSubMode="inquiries" />}
+        {activeTab === 'medical_reports' && <MedicalReportsView />}
       </main>
 
     </div>

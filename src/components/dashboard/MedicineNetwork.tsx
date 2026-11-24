@@ -7,14 +7,15 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   RotateCcw, 
-  Share2, 
-  Package, 
   Flame, 
   FileText, 
   Battery, 
   Droplets,
   Lock,
-  Unlock
+  Unlock,
+  TestTube,
+  Building,
+  ScanLine
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -36,19 +37,42 @@ export const MedicineNetwork: React.FC = () => {
     simulateTemperatureExcursion, 
     resetTemperatureExcursion,
     verifyMedicineBatch,
-    addAuditLog,
-    currentUser
+    decodeAndStoreBarcode,
+    selectedCity
   } = usePulseLink();
 
   const [inputBatchId, setInputBatchId] = useState('PL-MED-2026-9042');
   const [activeBatchResult, setActiveBatchResult] = useState(medicines[0]);
+  const [barcodeScanFeedback, setBarcodeScanFeedback] = useState<string | null>(null);
   const [qrScanning, setQrScanning] = useState(false);
-  const [redistributionNotified, setRedistributionNotified] = useState<string | null>(null);
+  const [activeTestKitStep, setActiveTestKitStep] = useState(1);
+
+  // Active Medicine Supply Requests across City Hubs (Section 4 Request Origin & Items)
+  const activeSupplyRequests = medicines.map(m => ({
+    id: `REQ-MED-${m.batchId.slice(-4)}`,
+    batchId: m.batchId,
+    medicineName: m.medicineName,
+    originHospital: m.requestOrigin?.originFacility || m.requestOrigin?.facilityName || 'Manipal Hospital (Old Airport Rd)',
+    department: m.requestOrigin?.department || 'Cardio-Thoracic ICU',
+    requestedItem: m.requestedItem || {
+      name: m.medicineName,
+      dosageForm: m.dosageForm,
+      strength: '500 mg / 10 ml',
+      quantityUnits: 25,
+      clinicalUrgency: 'CRITICAL_ICU'
+    },
+    requestedAt: m.requestOrigin?.timestamp || '2026-11-25 02:00 IST'
+  }));
 
   const handleVerify = (id: string) => {
-    const result = verifyMedicineBatch(id);
-    if (result) {
-      setActiveBatchResult(result);
+    const res = decodeAndStoreBarcode(id);
+    if (res.success && res.batch) {
+      setActiveBatchResult(res.batch);
+      setBarcodeScanFeedback(res.message);
+    } else {
+      const fallback = verifyMedicineBatch(id);
+      if (fallback) setActiveBatchResult(fallback);
+      setBarcodeScanFeedback(res.message);
     }
   };
 
@@ -58,37 +82,24 @@ export const MedicineNetwork: React.FC = () => {
     setTimeout(() => {
       handleVerify(batchId);
       setQrScanning(false);
-    }, 600);
-  };
-
-  const handleInitiateRedistribution = async (batchId: string, fromLoc: string, toClinic: string) => {
-    setRedistributionNotified(batchId);
-    await addAuditLog({
-      eventType: 'CHAIN_OF_CUSTODY_HANDOVER',
-      entityId: batchId,
-      summary: `SURPLUS REDISTRIBUTION DISPATCHED: Stock transfer initialized from [${fromLoc}] to peripheral center [${toClinic}] to prevent near-expiry wastage.`,
-      actor: currentUser.name,
-      actorRole: currentUser.title,
-      location: fromLoc
-    });
-    setTimeout(() => setRedistributionNotified(null), 4000);
+    }, 500);
   };
 
   return (
     <div className="space-y-8">
       
-      {/* SECTION 1: VERIFIEDMED (QR & BATCH AUTHENTICATION) */}
+      {/* SECTION 1: VERIFIEDMED (QR & BATCH AUTHENTICATION + INTERNAL SEQUENCE STORAGE) */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-bottle-700/80 pb-3">
           <div>
             <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-bone-300">
               <ShieldCheck className="w-3.5 h-3.5 text-sage" />
-              <span>VerifiedMed Cryptographic Passport</span>
+              <span>VerifiedMed Cryptographic Passport &amp; Barcode Ledger</span>
               <span className="text-bone-400">•</span>
-              <span className="text-bone-200">Anti-Counterfeiting Engine</span>
+              <span className="text-bone-200">Internal Sequence Storage Registry</span>
             </div>
             <h2 className="font-serif text-2xl font-bold text-bone-100 mt-0.5">
-              Medicine Batch &amp; QR Verification Tool
+              Medicine Barcode Authentication &amp; Quality Control
             </h2>
           </div>
           <p className="text-xs text-bone-300 font-mono">
@@ -100,32 +111,51 @@ export const MedicineNetwork: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* Left Form: Search & Quick Scenario Buttons (5 cols) */}
-          <div className="lg:col-span-5 bg-bottle-900 border border-bottle-700 rounded-xl p-5 shadow-xl space-y-5">
+          <div className="lg:col-span-5 bg-bottle-900 border border-bottle-700 rounded-xl p-5 shadow-xl space-y-4">
             <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-bone-300 mb-1.5">
-                Batch Identification Code (Bar/QR Code)
+              <label className="block text-xs font-mono uppercase tracking-wider text-bone-300 mb-1.5 flex items-center justify-between">
+                <span>Barcode / Batch Scanner Input</span>
+                <ScanLine className="w-3.5 h-3.5 text-sage" />
               </label>
               <div className="flex space-x-2">
                 <input 
                   type="text" 
                   value={inputBatchId}
                   onChange={e => setInputBatchId(e.target.value)}
-                  placeholder="e.g. PL-MED-2026-9042"
-                  className="flex-1 bg-bottle-950 border border-bottle-700 rounded-lg px-3 py-2 text-xs font-mono text-bone-100 focus:border-vermilion focus:outline-none uppercase"
+                  placeholder="Scan barcode or enter batch ID..."
+                  className="flex-1 bg-bottle-950 border border-bottle-700 rounded-lg px-3 py-2 text-xs font-mono text-bone-100 focus:border-cobalt focus:outline-none uppercase"
                 />
                 <button
                   onClick={() => handleVerify(inputBatchId)}
-                  className="px-4 py-2 bg-bottle-700 hover:bg-bottle-600 border border-bottle-500 rounded-lg text-xs font-mono font-bold text-bone-100 transition-colors"
+                  className="px-4 py-2 bg-cobalt hover:bg-cobalt-dark text-white rounded-lg text-xs font-mono font-bold transition-colors flex items-center space-x-1"
                 >
-                  Verify
+                  <ScanLine className="w-3.5 h-3.5" />
+                  <span>Decode</span>
                 </button>
               </div>
             </div>
 
+            {/* Internal Sequence Storage Notice (Section 4) */}
+            <div className="p-3 rounded-lg bg-bottle-950 border border-bottle-800 text-[11px] font-mono space-y-1">
+              <div className="flex items-center space-x-1.5 text-sage font-bold">
+                <Lock className="w-3.5 h-3.5" />
+                <span>Internal Sequence Ledger Protected:</span>
+              </div>
+              <p className="text-bone-300 text-[10px] leading-relaxed">
+                Decoded barcode sequences are held securely in the PulseLink internal state ledger. Raw manufacturer private keys and internal sequences are never broadcast or leaked publicly.
+              </p>
+            </div>
+
+            {barcodeScanFeedback && (
+              <div className="p-2.5 rounded-lg bg-bottle-950 border border-sage/40 text-[11px] font-mono text-bone-200">
+                {barcodeScanFeedback}
+              </div>
+            )}
+
             {/* One-Click Test Cases */}
             <div>
               <p className="text-xs font-mono uppercase tracking-wider text-bone-400 mb-2">
-                Pre-Loaded Test Scenarios:
+                Simulate Barcode Scan Scenarios:
               </p>
               <div className="space-y-2">
                 
@@ -155,7 +185,7 @@ export const MedicineNetwork: React.FC = () => {
                     <QrCode className="w-4 h-4 text-vermilion" />
                     <div>
                       <p className="text-xs font-semibold text-bone-100">PL-VAC-2025-1108</p>
-                      <p className="text-[10px] text-bone-400">Rabies Immunoglobulin (Expired Oct 2026)</p>
+                      <p className="text-[10px] text-bone-400">Rabies Immunoglobulin (Expired)</p>
                     </div>
                   </div>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-vermilion/20 text-vermilion border border-vermilion/40">
@@ -172,7 +202,7 @@ export const MedicineNetwork: React.FC = () => {
                     <QrCode className="w-4 h-4 text-amber" />
                     <div>
                       <p className="text-xs font-semibold text-bone-100">PL-ANT-2026-3391</p>
-                      <p className="text-[10px] text-bone-400">Anti-Snake Venom (Duplicate Scan Flag)</p>
+                      <p className="text-[10px] text-bone-400">Anti-Snake Venom (Flagged)</p>
                     </div>
                   </div>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber/20 text-amber border border-amber/40">
@@ -185,12 +215,12 @@ export const MedicineNetwork: React.FC = () => {
 
             {qrScanning && (
               <div className="bg-bottle-950 p-3 rounded-lg border border-bottle-800 text-center text-xs font-mono text-sage animate-pulse">
-                Simulating Optical QR &amp; NABL Blockchain Check...
+                Simulating Optical Barcode Scan &amp; Internal Ledger Storage...
               </div>
             )}
           </div>
 
-          {/* Right Panel: Verified Batch Passport (7 cols) */}
+          {/* Right Panel: Verified Batch Passport & Decoded Security Token (7 cols) */}
           <div className="lg:col-span-7 bg-bottle-900 border border-bottle-700 rounded-xl p-5 shadow-xl">
             {activeBatchResult ? (
               <div className="space-y-4">
@@ -199,7 +229,7 @@ export const MedicineNetwork: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-bottle-700">
                   <div>
                     <span className="text-[10px] font-mono uppercase text-bone-400 tracking-wider">
-                      Batch Certificate Record
+                      Batch Certificate Record &amp; Security Token
                     </span>
                     <h3 className="font-serif text-xl font-bold text-bone-100">
                       {activeBatchResult.medicineName}
@@ -281,15 +311,23 @@ export const MedicineNetwork: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Cryptographic Hash of Lab Certificate */}
+                {/* Internal Sequence Registry Status (Section 4) */}
                 <div className="bg-bottle-950 p-3 rounded-lg border border-bottle-800 text-xs">
                   <div className="flex items-center justify-between text-bone-400 font-mono text-[10px] mb-1">
-                    <span>NABL CERTIFICATE OF ANALYSIS (CoA) CRYPTOGRAPHIC HASH:</span>
-                    <span className="text-sage">SHA-256 VALIDATED</span>
+                    <span>INTERNAL DECODED SEQUENCE LEDGER ENTRY (PROTECTED):</span>
+                    <span className="text-sage font-bold">STORED IN APP STATE</span>
                   </div>
-                  <p className="font-mono text-[11px] text-bone-200 break-all bg-bottle-900/60 p-2 rounded border border-bottle-800">
-                    {activeBatchResult.labCertificateHash}
-                  </p>
+                  <div className="bg-bottle-900/80 p-2.5 rounded border border-bottle-800 text-[11px] font-mono text-bone-300 flex items-center justify-between">
+                    <div>
+                      <span className="text-bone-400">Ledger Key: </span>
+                      <strong className="text-bone-100">{activeBatchResult.batchId}</strong>
+                      <span className="text-bone-400 ml-2">• Hash: </span>
+                      <span className="text-sage font-mono">{activeBatchResult.internalBarcodeSequence.slice(0, 16)}...</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-sage/20 border border-sage/40 text-sage text-[10px]">
+                      Encrypted &amp; Authenticated
+                    </span>
+                  </div>
                 </div>
 
               </div>
@@ -304,7 +342,185 @@ export const MedicineNetwork: React.FC = () => {
         </div>
       </div>
 
-      {/* SECTION 2: COLDGUARD ESP32 TELEMETRY & LIVE CHART */}
+      {/* SECTION 2: MEDICINE TEST-KIT DIRECTIONS (Section 4 Specifications) */}
+      <div className="space-y-4">
+        <div className="border-b border-bottle-700/80 pb-3">
+          <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-bone-300">
+            <TestTube className="w-4 h-4 text-sage" />
+            <span>Chemical Quality Assurance Standard</span>
+            <span className="text-bone-400">•</span>
+            <span className="text-bone-200">Point-of-Care Verification Protocol</span>
+          </div>
+          <h2 className="font-serif text-2xl font-bold text-bone-100 mt-0.5">
+            Physical Medicine Test-Kit Step-by-Step Directions
+          </h2>
+          <p className="text-xs text-bone-300 font-sans mt-0.5">
+            Hospital clinicians and pharmacists must follow these physical testing steps to verify active API composition prior to bedside infusion.
+          </p>
+        </div>
+
+        {/* Step-by-step Interactive Carousel / Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          
+          {/* Step 1 */}
+          <div 
+            onClick={() => setActiveTestKitStep(1)}
+            className={`p-4 rounded-xl border transition-all cursor-pointer ${
+              activeTestKitStep === 1 
+                ? 'bg-bottle-900 border-cobalt ring-1 ring-cobalt shadow-xl' 
+                : 'bg-bottle-950 border-bottle-800 hover:border-bottle-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="w-6 h-6 rounded-full bg-cobalt text-white text-xs font-mono font-bold flex items-center justify-center">
+                1
+              </span>
+              <span className="text-[10px] font-mono text-bone-400 uppercase">Preparation</span>
+            </div>
+            <h4 className="font-serif font-bold text-bone-100 text-sm">
+              Reagent Vial Swab &amp; Aliquot Sampling
+            </h4>
+            <p className="text-xs text-bone-300 font-sans mt-2 leading-relaxed">
+              Carefully draw 0.1 mL liquid or 50 mg powder using the sterile micro-dropper from the medicine vial. Introduce into Reagent Chamber A (Buffer Solution pH 7.2).
+            </p>
+          </div>
+
+          {/* Step 2 */}
+          <div 
+            onClick={() => setActiveTestKitStep(2)}
+            className={`p-4 rounded-xl border transition-all cursor-pointer ${
+              activeTestKitStep === 2 
+                ? 'bg-bottle-900 border-cobalt ring-1 ring-cobalt shadow-xl' 
+                : 'bg-bottle-950 border-bottle-800 hover:border-bottle-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="w-6 h-6 rounded-full bg-cobalt text-white text-xs font-mono font-bold flex items-center justify-center">
+                2
+              </span>
+              <span className="text-[10px] font-mono text-bone-400 uppercase">Reaction</span>
+            </div>
+            <h4 className="font-serif font-bold text-bone-100 text-sm">
+              Colorimetric Mixing &amp; Incubation
+            </h4>
+            <p className="text-xs text-bone-300 font-sans mt-2 leading-relaxed">
+              Invert the test kit vial 5 times. Allow colorimetric chemical reagent reaction to incubate at room temperature for precisely 90 seconds without agitation.
+            </p>
+          </div>
+
+          {/* Step 3 */}
+          <div 
+            onClick={() => setActiveTestKitStep(3)}
+            className={`p-4 rounded-xl border transition-all cursor-pointer ${
+              activeTestKitStep === 3 
+                ? 'bg-bottle-900 border-cobalt ring-1 ring-cobalt shadow-xl' 
+                : 'bg-bottle-950 border-bottle-800 hover:border-bottle-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="w-6 h-6 rounded-full bg-cobalt text-white text-xs font-mono font-bold flex items-center justify-center">
+                3
+              </span>
+              <span className="text-[10px] font-mono text-bone-400 uppercase">Comparison</span>
+            </div>
+            <h4 className="font-serif font-bold text-bone-100 text-sm">
+              Spectrum Color Band Matching
+            </h4>
+            <p className="text-xs text-bone-300 font-sans mt-2 leading-relaxed">
+              Compare the resulting test vial hue against the CDSCO standard reference strip: Pure API turns Emerald Green (#0F372B). Adulterated or degraded compounds precipitate cloudy grey.
+            </p>
+          </div>
+
+          {/* Step 4 */}
+          <div 
+            onClick={() => setActiveTestKitStep(4)}
+            className={`p-4 rounded-xl border transition-all cursor-pointer ${
+              activeTestKitStep === 4 
+                ? 'bg-bottle-900 border-cobalt ring-1 ring-cobalt shadow-xl' 
+                : 'bg-bottle-950 border-bottle-800 hover:border-bottle-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="w-6 h-6 rounded-full bg-sage text-bottle-950 text-xs font-mono font-bold flex items-center justify-center">
+                4
+              </span>
+              <span className="text-[10px] font-mono text-sage uppercase font-bold">Clearance</span>
+            </div>
+            <h4 className="font-serif font-bold text-bone-100 text-sm">
+              Digital Clearance Log &amp; Infusion
+            </h4>
+            <p className="text-xs text-bone-300 font-sans mt-2 leading-relaxed">
+              Confirm test result in the PulseLink terminal to release medicine from quarantine hold and sign digital custody handover for ICU administration.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      {/* SECTION 3: REQUEST ORIGIN & ITEMS (Section 4 Specifications) */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-bottle-700/80 pb-3">
+          <div>
+            <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-bone-300">
+              <Building className="w-3.5 h-3.5 text-sage" />
+              <span>Inter-Hospital Essential Medicine Requisition Feed</span>
+              <span className="text-bone-400">•</span>
+              <span className="text-bone-200">{selectedCity.name} Metropolitan Grid</span>
+            </div>
+            <h2 className="font-serif text-2xl font-bold text-bone-100 mt-0.5">
+              Live Requisition Origins &amp; Requested Items
+            </h2>
+          </div>
+          <span className="text-xs font-mono text-bone-400">
+            {activeSupplyRequests.length} Active Medical Facility Orders
+          </span>
+        </div>
+
+        {/* Requisitions Table */}
+        <div className="bg-bottle-900 border border-bottle-700 rounded-xl overflow-hidden shadow-xl">
+          <table className="w-full text-left text-xs font-sans">
+            <thead className="bg-bottle-950 text-bone-300 font-mono uppercase text-[11px] border-b border-bottle-700">
+              <tr>
+                <th className="py-3 px-4">Request Origin Facility</th>
+                <th className="py-3 px-3">Hospital Department</th>
+                <th className="py-3 px-3">Item Requested</th>
+                <th className="py-3 px-3">Strength &amp; Form</th>
+                <th className="py-3 px-3">Quantity</th>
+                <th className="py-3 px-3">Urgency</th>
+                <th className="py-3 px-4 text-right">Timestamp</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-bottle-800">
+              {activeSupplyRequests.map(req => (
+                <tr key={req.id} className="hover:bg-bottle-800/40 transition-colors">
+                  <td className="py-3.5 px-4 font-semibold text-bone-100">
+                    {req.originHospital}
+                    <span className="block text-[10px] text-bone-400 font-mono">{req.id}</span>
+                  </td>
+                  <td className="py-3.5 px-3 text-bone-300 font-mono">{req.department}</td>
+                  <td className="py-3.5 px-3 font-bold text-sage">{req.requestedItem.name}</td>
+                  <td className="py-3.5 px-3 font-mono text-bone-200">{req.requestedItem.dosageForm} ({req.requestedItem.strength})</td>
+                  <td className="py-3.5 px-3 font-mono font-bold text-bone-100">{req.requestedItem.quantityUnits} Units</td>
+                  <td className="py-3.5 px-3">
+                    <span className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
+                      req.requestedItem.clinicalUrgency === 'CRITICAL_ICU'
+                        ? 'bg-vermilion/20 text-vermilion border border-vermilion/40'
+                        : 'bg-amber/20 text-amber border border-amber/40'
+                    }`}>
+                      {req.requestedItem.clinicalUrgency.replace(/_/g, ' ')}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-right font-mono text-bone-400 text-[11px]">
+                    {req.requestedAt}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* SECTION 4: COLDGUARD ESP32 TELEMETRY & LIVE CHART */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-bottle-700/80 pb-3">
           <div>
@@ -319,7 +535,6 @@ export const MedicineNetwork: React.FC = () => {
             </h2>
           </div>
 
-          {/* Excursion Trigger Actions */}
           <div className="flex items-center space-x-2">
             {!isExcursionActive ? (
               <button
@@ -344,119 +559,96 @@ export const MedicineNetwork: React.FC = () => {
         {/* Live Metrics Header Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           
-          {/* Temperature Sensor */}
           <div className={`p-4 rounded-xl border transition-all ${
             isExcursionActive 
               ? 'bg-bottle-950 border-vermilion shadow-lg shadow-vermilion/20 animate-pulse' 
               : 'bg-bottle-900 border-bottle-700'
           }`}>
-            <div className="flex items-center justify-between text-xs font-mono text-bone-400">
-              <span>Carrier Box Temp</span>
+            <div className="flex items-center justify-between text-bone-400 text-xs font-mono">
+              <span>Probe Temp (ESP32)</span>
               <Thermometer className={`w-4 h-4 ${isExcursionActive ? 'text-vermilion' : 'text-sage'}`} />
             </div>
-            <div className={`text-2xl font-bold font-mono mt-1 ${isExcursionActive ? 'text-vermilion' : 'text-sage'}`}>
+            <p className={`font-mono text-2xl font-bold mt-1 ${isExcursionActive ? 'text-vermilion' : 'text-bone-100'}`}>
               {currentTemp}°C
-            </div>
-            <p className="text-[10px] font-mono text-bone-400 mt-0.5">
-              {isExcursionActive ? 'EXCEEDS SAFE MAX (8.0°C)' : 'Nominal Safe Band (2–8°C)'}
+            </p>
+            <p className="text-[10px] text-bone-400 font-mono mt-0.5">
+              Safe Band: 2.0°C – 8.0°C
             </p>
           </div>
 
-          {/* Humidity Sensor */}
           <div className="bg-bottle-900 border border-bottle-700 p-4 rounded-xl">
-            <div className="flex items-center justify-between text-xs font-mono text-bone-400">
-              <span>Internal Humidity</span>
-              <Droplets className="w-4 h-4 text-cyan-400" />
+            <div className="flex items-center justify-between text-bone-400 text-xs font-mono">
+              <span>Box Humidity</span>
+              <Droplets className="w-4 h-4 text-cobalt" />
             </div>
-            <div className="text-2xl font-bold font-mono text-bone-100 mt-1">
-              56% RH
-            </div>
-            <p className="text-[10px] font-mono text-bone-400 mt-0.5">
-              Safe limit &lt; 65% RH
+            <p className="font-mono text-2xl font-bold text-bone-100 mt-1">
+              {telemetryData.length > 0 ? telemetryData[telemetryData.length - 1].humidity : 55}%
+            </p>
+            <p className="text-[10px] text-bone-400 font-mono mt-0.5">
+              Target: 40% – 65% RH
             </p>
           </div>
 
-          {/* Container Battery */}
           <div className="bg-bottle-900 border border-bottle-700 p-4 rounded-xl">
-            <div className="flex items-center justify-between text-xs font-mono text-bone-400">
-              <span>Peltier Battery</span>
+            <div className="flex items-center justify-between text-bone-400 text-xs font-mono">
+              <span>Carrier Battery</span>
               <Battery className="w-4 h-4 text-sage" />
             </div>
-            <div className="text-2xl font-bold font-mono text-bone-100 mt-1">
-              88%
-            </div>
-            <p className="text-[10px] font-mono text-bone-400 mt-0.5">
-              Est. Reserve: 14.2 Hours
+            <p className="font-mono text-2xl font-bold text-bone-100 mt-1">
+              {telemetryData.length > 0 ? Math.round(telemetryData[telemetryData.length - 1].batteryPercent) : 89}%
+            </p>
+            <p className="text-[10px] text-bone-400 font-mono mt-0.5">
+              Est. Remaining: 14h 20m
             </p>
           </div>
 
-          {/* Door Seal Status */}
-          <div className="bg-bottle-900 border border-bottle-700 p-4 rounded-xl">
-            <div className="flex items-center justify-between text-xs font-mono text-bone-400">
-              <span>Smart Seal / Door</span>
-              {isExcursionActive ? (
-                <Unlock className="w-4 h-4 text-vermilion" />
-              ) : (
-                <Lock className="w-4 h-4 text-sage" />
-              )}
+          <div className={`p-4 rounded-xl border ${
+            isExcursionActive ? 'bg-vermilion/20 border-vermilion text-vermilion' : 'bg-bottle-900 border-bottle-700'
+          }`}>
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span>Lid Tamper Seal</span>
+              {isExcursionActive ? <Unlock className="w-4 h-4 text-vermilion" /> : <Lock className="w-4 h-4 text-sage" />}
             </div>
-            <div className={`text-xl font-bold font-mono mt-1 ${isExcursionActive ? 'text-vermilion' : 'text-sage'}`}>
-              {isExcursionActive ? 'SEAL BREACH' : 'LOCKED (RFID)'}
-            </div>
-            <p className="text-[10px] font-mono text-bone-400 mt-0.5">
-              {isExcursionActive ? 'Audit Incident Logged' : 'Biometric Lock Engaged'}
+            <p className="font-mono text-lg font-bold mt-1">
+              {isExcursionActive ? 'SEAL BREACHED' : 'HERMETICALLY SEALED'}
+            </p>
+            <p className="text-[10px] font-mono mt-0.5">
+              {isExcursionActive ? 'Optical sensor open' : 'Magnetic switch locked'}
             </p>
           </div>
 
         </div>
 
-        {/* Recharts Streaming Chart */}
-        <div className="bg-bottle-900 border border-bottle-700 rounded-xl p-5 shadow-xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2 text-xs font-mono text-bone-300">
-              <span className="w-2.5 h-2.5 rounded-full bg-sage" />
-              <span>Streaming IoT Telemetry (ESP32-SEN-0881)</span>
-              <span className="text-bone-400">•</span>
-              <span className="text-bone-400">Shaded Region: Valid Cold-Chain (2°C – 8°C)</span>
-            </div>
-            {isExcursionActive && (
-              <span className="text-xs font-mono text-vermilion font-bold animate-pulse">
-                ⚠ ALERT: TEMPERATURE EXCURSION DETECTED
+        {/* Temperature Line Chart */}
+        <div className="bg-bottle-900 border border-bottle-700 rounded-xl p-4 shadow-xl">
+          <div className="flex items-center justify-between mb-3 text-xs font-mono">
+            <span className="text-bone-300">Continuous Rolling Thermal Stream (Last 15 Heartbeats)</span>
+            <div className="flex items-center space-x-3">
+              <span className="flex items-center space-x-1 text-sage">
+                <span className="w-2.5 h-0.5 bg-sage inline-block" />
+                <span>Safe Band (2°C–8°C)</span>
               </span>
-            )}
+              <span className="flex items-center space-x-1 text-vermilion">
+                <span className="w-2.5 h-0.5 bg-vermilion inline-block" />
+                <span>Excursion Limit</span>
+              </span>
+            </div>
           </div>
 
-          <div className="h-64 w-full">
+          <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={telemetryData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-                {/* Safe Temperature Band Shading (2°C to 8°C) */}
-                <ReferenceArea y1={2} y2={8} fill="#2E7D32" fillOpacity={0.08} />
-                
-                {/* Threshold Line at 8°C */}
-                <ReferenceLine y={8} stroke="#0C45B0" strokeDasharray="3 3" label={{ value: 'Max Safe: 8°C', fill: '#0C45B0', fontSize: 10, position: 'right' }} />
-                <ReferenceLine y={2} stroke="#2E7D32" strokeDasharray="3 3" label={{ value: 'Min Safe: 2°C', fill: '#2E7D32', fontSize: 10, position: 'right' }} />
-
-                <XAxis 
-                  dataKey="time" 
-                  stroke="var(--color-text-muted)" 
-                  fontSize={10} 
-                  tickLine={false} 
-                  fontFamily="monospace"
-                />
-                <YAxis 
-                  domain={[0, 14]} 
-                  stroke="var(--color-text-muted)" 
-                  fontSize={10} 
-                  tickLine={false} 
-                  unit="°C"
-                  fontFamily="monospace"
-                />
+              <LineChart data={telemetryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <ReferenceArea y1={2.0} y2={8.0} fill="#2E7D32" fillOpacity={0.12} />
+                <ReferenceLine y={8.0} stroke="#E63B2E" strokeDasharray="3 3" />
+                <ReferenceLine y={2.0} stroke="#0C45B0" strokeDasharray="3 3" />
+                <XAxis dataKey="time" stroke="#A89F91" fontSize={10} tickLine={false} />
+                <YAxis domain={[0, 14]} stroke="#A89F91" fontSize={10} tickLine={false} unit="°C" />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: 'var(--color-surface)', 
-                    borderColor: 'var(--color-border)', 
+                    backgroundColor: '#0F372B', 
+                    borderColor: '#265444', 
                     borderRadius: '8px',
-                    color: 'var(--color-text-primary)',
+                    color: '#EFE7DA',
                     fontSize: '11px',
                     fontFamily: 'monospace'
                   }}
@@ -465,9 +657,9 @@ export const MedicineNetwork: React.FC = () => {
                 <Line 
                   type="monotone" 
                   dataKey="temperature" 
-                  stroke={isExcursionActive ? '#0C45B0' : '#2E7D32'} 
+                  stroke={isExcursionActive ? '#E63B2E' : '#2E7D32'} 
                   strokeWidth={2.5} 
-                  dot={{ r: 3, fill: isExcursionActive ? '#0C45B0' : '#2E7D32' }}
+                  dot={{ r: 3, fill: isExcursionActive ? '#E63B2E' : '#2E7D32' }}
                   isAnimationActive={false}
                 />
               </LineChart>
@@ -475,107 +667,6 @@ export const MedicineNetwork: React.FC = () => {
           </div>
         </div>
 
-      </div>
-
-      {/* SECTION 3: STOCKWATCH (AFFORDABLE MEDICINE & REDISTRIBUTION) */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-bottle-700/80 pb-3">
-          <div>
-            <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-bone-300">
-              <Package className="w-3.5 h-3.5 text-sage" />
-              <span>StockWatch &amp; Fair Redistribution</span>
-              <span className="text-bone-400">•</span>
-              <span className="text-sage">Zero Expiry Wastage</span>
-            </div>
-            <h2 className="font-serif text-2xl font-bold text-bone-100 mt-0.5">
-              Affordable Essential Medicines &amp; Anti-Wastage Balancing
-            </h2>
-          </div>
-          <p className="text-xs text-bone-300 font-mono">
-            Direct Jan Aushadhi &amp; State Subsidized Pricing
-          </p>
-        </div>
-
-        {/* Medicines Catalog Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {medicines.map(med => {
-            const savingsPercent = Math.round(((med.standardMrpInr - med.subsidizedPriceInr) / med.standardMrpInr) * 100);
-            const isRedistributing = redistributionNotified === med.batchId;
-
-            return (
-              <div 
-                key={med.batchId}
-                className="bg-bottle-900 border border-bottle-700 rounded-xl p-4 flex flex-col justify-between shadow-lg"
-              >
-                <div>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-semibold text-bone-100 text-sm">{med.medicineName}</h4>
-                      <p className="text-[11px] text-bone-400 font-mono mt-0.5">
-                        {med.dosageForm} • {med.manufacturer}
-                      </p>
-                    </div>
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-bottle-950 text-sage border border-bottle-800">
-                      {med.currentStockUnits} Units
-                    </span>
-                  </div>
-
-                  {/* Pricing Comparison: MRP vs PulseLink Subsidized */}
-                  <div className="mt-3 flex items-center space-x-4 bg-bottle-950 p-2.5 rounded-lg border border-bottle-800">
-                    <div>
-                      <span className="text-[10px] text-bone-400 font-mono block">Commercial MRP</span>
-                      <span className="line-through text-xs text-bone-400 font-mono">₹{med.standardMrpInr}</span>
-                    </div>
-
-                    <div className="border-l border-bottle-800 pl-4">
-                      <span className="text-[10px] text-sage font-mono block font-bold">PulseLink Subsidized</span>
-                      <span className="text-base font-bold text-bone-100 font-mono">₹{med.subsidizedPriceInr}</span>
-                    </div>
-
-                    <div className="ml-auto bg-sage/10 text-sage text-[10px] font-mono px-2 py-1 rounded border border-sage/30">
-                      SAVE {savingsPercent}%
-                    </div>
-                  </div>
-
-                  {/* Redistribution Suggestion if near-expiry */}
-                  {med.redistributionRecommended && (
-                    <div className="mt-3 bg-bottle-950/80 p-2.5 rounded-lg border border-amber/40 text-xs space-y-1.5">
-                      <div className="flex items-center space-x-1.5 text-amber font-mono font-bold text-[11px]">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        <span>Near Expiry Alert ({med.redistributionRecommended.daysUntilExpiry} Days Left)</span>
-                      </div>
-                      <p className="text-[11px] text-bone-300">
-                        {med.redistributionRecommended.reason}
-                      </p>
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-[10px] font-mono text-bone-400">
-                          Route: {med.redistributionRecommended.fromLocation} ➔ {med.redistributionRecommended.toClinic}
-                        </span>
-                        <button
-                          onClick={() => handleInitiateRedistribution(
-                            med.batchId,
-                            med.redistributionRecommended!.fromLocation,
-                            med.redistributionRecommended!.toClinic
-                          )}
-                          disabled={isRedistributing}
-                          className="px-2.5 py-1 bg-amber hover:bg-amber-dark text-bottle-950 text-[10px] font-mono font-bold rounded flex items-center space-x-1 transition-colors"
-                        >
-                          <Share2 className="w-3 h-3" />
-                          <span>{isRedistributing ? 'Dispatching...' : 'Redistribute'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-bottle-800 flex items-center justify-between text-[11px] font-mono text-bone-400">
-                  <span>Batch: {med.batchId}</span>
-                  <span>Expires: {med.expiryDate}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
 
     </div>

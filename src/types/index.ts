@@ -15,6 +15,7 @@ export interface UserProfile {
 
 export type UserCategory = 
   | 'patient_family' 
+  | 'patient_or_family'
   | 'medical_staff' 
   | 'gov_employee' 
   | 'other';
@@ -67,6 +68,41 @@ export interface OrganViabilityItem {
   assignedVehicleId: string;
   estimatedArrivalMinutes: number;
   allocatedReason: string;
+
+  // Section 3 additions
+  timeOfDeath: string;
+  timeOfDeathCountdownSec: number;
+  timeOfDeathInitialOwner?: string;
+  bloodType?: string;
+  medicalReports: {
+    hlaTyping: string;
+    crossMatch: string;
+    crossMatchResult?: string;
+    serology: string;
+    ischemicTolerance: string;
+    clinicalMetrics: string;
+    biopsyScore?: string;
+    clinicalSummary?: string;
+    reportDocumentUrl?: string;
+  };
+  organCondition: {
+    preservationStatus: string;
+    viabilityScorePercent: number;
+    perfusionMethod: string;
+    preservationMethod?: string;
+    biopsyAssessment: string;
+    temperatureCelsius?: number;
+    biochemicalParameters?: string;
+  };
+  matchStatus: 'Matched' | 'Not Matched' | 'Pending Review';
+  matchReasoning: string;
+  governmentRegistrations: {
+    nottoId: string;
+    sottoClearance: string;
+    thotaForms: string[];
+    registrationStatus: 'Approved' | 'Pending Review' | 'Urgent Exemption Active';
+    contactOfficer: string;
+  };
 }
 
 export interface BloodInventoryItem {
@@ -77,6 +113,8 @@ export interface BloodInventoryItem {
   contactPhone?: string;
   stock: Record<string, number>; // e.g. { 'O-': 4, 'O+': 28, 'A-': 6, ... }
   lastUpdated: string;
+  storageCondition?: string;
+  screeningCertified?: boolean;
 }
 
 export interface BloodRequestItem {
@@ -91,6 +129,24 @@ export interface BloodRequestItem {
   assignedVehicleId?: string;
   timestamp: string;
   etaMinutes?: number;
+
+  // Section 5 additions
+  bloodGroupCheck: {
+    donorGroup: string;
+    compatibleRecipients: string[];
+    rhFactor: 'Positive' | 'Negative';
+    crossMatchResult: 'COMPATIBLE' | 'CROSS_MATCH_PENDING' | 'INCOMPATIBLE';
+  };
+  bloodConditionAndQuality: {
+    storageCondition: string; // e.g. "2°C to 6°C Monitored CPDA-1 Refrigerated Storage"
+    screeningCertified: boolean;
+    screeningDetails: string; // e.g. "HIV-1/2, HBsAg, HCV, Syphilis, Malaria Non-Reactive (NABL Certified)"
+    qualityStatus: 'Pristine' | 'Acceptable' | 'Requires Retest';
+    hematocritPercent: number;
+    hemolysisPercent: number;
+  };
+  quantityNeeded: number;
+  urgencyLevel: 'Critical (OT Immediate)' | 'Urgent (<2 hrs)' | 'Standard Supply';
 }
 
 export interface GeoCoordinate {
@@ -133,6 +189,7 @@ export interface CorridorRoute {
   clearedIntersectionsCount: number;
   totalIntersectionsCount: number;
   activeBottlenecks: string[];
+  distanceKm?: number;
 }
 
 export interface MedicineBatch {
@@ -144,8 +201,11 @@ export interface MedicineBatch {
   expiryDate: string;
   cdscoLicenseNo: string;
   currentStockUnits: number;
+  unitsAvailable?: number;
   depotLocation: string;
   storageRequirement: string; // e.g., '2°C to 8°C (Cold-Chain)'
+  safeTempMin?: number;
+  safeTempMax?: number;
   standardMrpInr: number;
   subsidizedPriceInr: number;
   labCertificateHash: string;
@@ -158,6 +218,76 @@ export interface MedicineBatch {
     daysUntilExpiry: number;
     reason: string;
   };
+
+  // Section 4 additions
+  internalBarcodeSequence: string; // Stored securely internally on our side, never leaked raw
+  decodedPayload: {
+    gtin: string;
+    batchNo: string;
+    serialNo: string;
+    verificationHash: string;
+  };
+  testKitDirections: {
+    steps: string[];
+    colorBandCheck: string;
+    observationWindowSeconds: number;
+    reagentSolutionName: string;
+  };
+  requestOrigin: {
+    facilityName: string;
+    originFacility?: string;
+    department: string;
+    locationCity: string;
+    timestamp: string;
+  };
+  requestedItem: {
+    name: string;
+    dosageForm: string;
+    strength: string;
+    quantityUnits: number;
+    clinicalUrgency: 'CRITICAL_ICU' | 'HIGH_PRIORITY' | 'ROUTINE_STOCK';
+  };
+}
+
+// Government Registries & Allocation Console Interfaces (Section 2C)
+export interface HospitalRegistryItem {
+  id: string;
+  name: string;
+  licenseNumber: string;
+  accreditation: 'NABH_LEVEL_3' | 'NOTTO_REGISTERED' | 'GOVT_APEX';
+  city: string;
+  activeTransplantBeds: number;
+  nodalOfficer: string;
+  contact: string;
+  status: 'VERIFIED' | 'UNDER_AUDIT';
+}
+
+export interface PatientRegistryItem {
+  id: string;
+  patientInitials: string;
+  age: number;
+  gender: 'M' | 'F' | 'Other';
+  bloodGroup: string;
+  organNeeded: OrganType;
+  meldScore: number;
+  urgencyTier: 'STATUS_1A_CRITICAL' | 'STATUS_1B_URGENT' | 'STATUS_2_WAITLIST';
+  registeredDate: string;
+  hospital: string;
+  allocationStatus: 'ALLOCATED' | 'WAITLISTED' | 'DEALLOCATED' | 'UNDER_REVIEW';
+}
+
+export interface AllocationConsoleItem {
+  id: string;
+  patientId: string;
+  patientInitials: string;
+  hospital: string;
+  organ: OrganType;
+  organId: string;
+  suggestedAction: 'ALLOCATE' | 'DEALLOCATE' | 'HOLD_FOR_TESTS';
+  clinicalReasoning: string;
+  medicalReportsSummary: string;
+  officerApprovalStatus: 'APPROVED' | 'PENDING' | 'DEALLOCATED';
+  timestamp: string;
 }
 
 export interface TelemetryPoint {

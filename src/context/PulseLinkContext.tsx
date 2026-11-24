@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type {
   UserRole,
   UserProfile,
+  UserCategory,
   CorridorRoute,
   OrganViabilityItem,
   BloodInventoryItem,
@@ -11,7 +12,10 @@ import type {
   FairRouteCandidate,
   ClearChainBlock,
   VerificationUserData,
-  CityConfig
+  CityConfig,
+  HospitalRegistryItem,
+  PatientRegistryItem,
+  AllocationConsoleItem
 } from '../types';
 import {
   USER_PROFILES,
@@ -23,30 +27,81 @@ import {
   INITIAL_MEDICINES,
   INITIAL_TELEMETRY,
   INITIAL_FAIRROUTE_CANDIDATES,
-  INITIAL_AUDIT_BLOCKS
+  INITIAL_AUDIT_BLOCKS,
+  HOSPITAL_REGISTRY,
+  PATIENT_REGISTRY,
+  INITIAL_ALLOCATIONS
 } from '../data/mockData';
 import { soundFx } from '../utils/audio';
 import { computeSha256 } from '../utils/crypto';
 
+export type PulseLinkTab = 
+  | 'corridors' 
+  | 'requests' 
+  | 'medicine' 
+  | 'fairroute' 
+  | 'audit'
+  | 'hospital_registry'
+  | 'patient_registry'
+  | 'allocation_console'
+  | 'user_availability'
+  | 'user_registrations'
+  | 'user_inquiries'
+  | 'medical_reports';
+
+export interface UserInquiryItem {
+  id: string;
+  userName: string;
+  userPhone: string;
+  userEmail: string;
+  category: 'organ' | 'blood' | 'medicine' | 'general';
+  query: string;
+  city: string;
+  timestamp: string;
+  status: 'Received' | 'Assigned to Medical Officer' | 'Action In Progress' | 'Resolved';
+  assignedOfficer?: string;
+}
+
 interface PulseLinkContextType {
-  // Navigation & Role
+  // Navigation & Gate
   viewMode: 'landing' | 'dashboard' | 'login';
   setViewMode: (mode: 'landing' | 'dashboard' | 'login') => void;
-  activeTab: 'corridors' | 'requests' | 'medicine' | 'fairroute' | 'audit';
-  setActiveTab: (tab: 'corridors' | 'requests' | 'medicine' | 'fairroute' | 'audit') => void;
+  activeTab: PulseLinkTab;
+  setActiveTab: (tab: PulseLinkTab) => void;
   activeSubFocus: 'all' | 'organ' | 'blood' | 'medicine';
   setActiveSubFocus: (focus: 'all' | 'organ' | 'blood' | 'medicine') => void;
+
+  // Gate & Waiting Area
+  gateStatus: 'intake' | 'waiting' | 'approved';
+  isGateApproved: boolean;
+  gateGuardError: string | null;
+  setGateGuardError: (err: string | null) => void;
+  guardNavigation: (targetTab?: PulseLinkTab, targetView?: 'landing' | 'dashboard' | 'login') => boolean;
+  submitIntake: (data: VerificationUserData) => void;
+  completeGateAndEnter: () => void;
+  resetGateToIntake: () => void;
+
+  // Role booleans & permissions
   currentRole: UserRole;
   setCurrentRole: (role: UserRole) => void;
   currentUser: UserProfile;
   allProfiles: UserProfile[];
+  userCategory: UserCategory;
+  isCommonUser: boolean;
+  isMedicalStaff: boolean;
+  isGovEmployee: boolean;
+  isPulseLinkEmployee: boolean;
+  canViewMap: boolean;
+  canViewOrganOriginLocation: boolean;
+  canViewCommandCenter: boolean;
+  canViewRequestsPanel: boolean;
 
   // City Grid Operations
   selectedCity: CityConfig;
   setSelectedCity: (city: CityConfig) => void;
   supportedCities: CityConfig[];
 
-  // Pseudo-login verification gate
+  // User Verification state
   verificationUser: VerificationUserData | null;
   submitVerification: (data: VerificationUserData) => void;
   logoutVerification: () => void;
@@ -59,6 +114,7 @@ interface PulseLinkContextType {
 
   // Organ Viability
   organTransfers: OrganViabilityItem[];
+  requestMedicalPersonnelHelp: (registrationType: string, organId?: string) => Promise<void>;
 
   // Blood Requests & Banks
   bloodBanks: BloodInventoryItem[];
@@ -80,6 +136,19 @@ interface PulseLinkContextType {
   simulateTemperatureExcursion: () => Promise<void>;
   resetTemperatureExcursion: () => Promise<void>;
   verifyMedicineBatch: (batchId: string) => MedicineBatch | null;
+  medicineSequenceRegistry: Record<string, { internalSequence: string; decodedPayload: string; registeredAt: string }>;
+  decodeAndStoreBarcode: (barcodeInput: string) => { success: boolean; batch?: MedicineBatch; message: string; decodedInternalSeq?: string };
+
+  // Government Registries & Allocation Console
+  hospitalRegistry: HospitalRegistryItem[];
+  patientRegistry: PatientRegistryItem[];
+  allocationConsole: AllocationConsoleItem[];
+  approveAllocation: (id: string) => Promise<void>;
+  deallocateItem: (id: string, reason: string) => Promise<void>;
+
+  // Common User Inquiries
+  userInquiries: UserInquiryItem[];
+  submitUserInquiry: (category: 'organ' | 'blood' | 'medicine' | 'general', queryText: string) => Promise<void>;
 
   // FairRoute Decision Support
   candidates: FairRouteCandidate[];
@@ -102,7 +171,7 @@ interface PulseLinkContextType {
   toggleAudioMute: () => void;
   currentTimeString: string;
 
-  // Theme Mode (Sand Editorial vs Terracotta Dark)
+  // Theme Mode
   themeMode: 'sand' | 'terracotta_dark';
   toggleThemeMode: () => void;
 }
@@ -110,12 +179,18 @@ interface PulseLinkContextType {
 const PulseLinkContext = createContext<PulseLinkContextType | undefined>(undefined);
 
 export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Always open on pseudo login page every time the site is loaded
+  // Always open on pseudo login page (gate) every time the site is loaded / reloaded
   const [viewMode, setViewMode] = useState<'landing' | 'dashboard' | 'login'>('login');
-  const [activeTab, setActiveTab] = useState<'corridors' | 'requests' | 'medicine' | 'fairroute' | 'audit'>('corridors');
+  const [activeTab, setActiveTab] = useState<PulseLinkTab>('corridors');
   const [activeSubFocus, setActiveSubFocus] = useState<'all' | 'organ' | 'blood' | 'medicine'>('all');
   const [currentRole, setCurrentRole] = useState<UserRole>('hospital_coordinator');
   const [selectedCorridorId, setSelectedCorridorId] = useState<string>('corr-01');
+
+  // Gate Status & Route Guards: No tab can open without completing intake & waiting clearance
+  const [gateStatus, setGateStatus] = useState<'intake' | 'waiting' | 'approved'>('intake');
+  const [gateGuardError, setGateGuardError] = useState<string | null>(null);
+
+  const isGateApproved = gateStatus === 'approved';
 
   // Selected City Grid Operations
   const [selectedCity, setSelectedCityState] = useState<CityConfig>(() => {
@@ -153,16 +228,75 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return {
       fullName: 'aditya chourasia',
       email: 'aditya.chourasia10329@gmail.com',
-      workOrganisation: 'cafe',
+      workOrganisation: 'manipal hospital',
       city: 'Bengaluru',
       userCategory: 'medical_staff',
       purposeOfVisit: 'requesting',
       phoneWhatsapp: '9313264332',
+      isPulseLinkEmployee: false,
       verifiedAt: new Date().toISOString()
     };
   });
 
-  const submitVerification = (data: VerificationUserData) => {
+  // Calculate role booleans based on category
+  const userCategory: UserCategory = verificationUser?.userCategory || 'medical_staff';
+  const isPulseLinkEmployee = Boolean(verificationUser?.isPulseLinkEmployee);
+  const isGovEmployee = userCategory === 'gov_employee';
+  const isMedicalStaff = userCategory === 'medical_staff';
+  const isCommonUser = userCategory === 'patient_or_family' || userCategory === 'patient_family';
+
+  // Strict Permissions per Section 2 & 6:
+  // - Map feature: ONLY Government Employee and PulseLink Employee can view map!
+  //   Medical Staff and Common User MUST NOT see map feature.
+  const canViewMap = isGovEmployee || isPulseLinkEmployee;
+
+  // - Organ physical location: Medical Staff and Common User MUST NOT see where the organ is located.
+  const canViewOrganOriginLocation = isGovEmployee || isPulseLinkEmployee;
+
+  // - Command Center: Visible to Government Employee, PulseLink Employee, and Medical Staff (without map).
+  //   Common User has NO Command Center access.
+  const canViewCommandCenter = isGovEmployee || isPulseLinkEmployee || isMedicalStaff;
+
+  // - Requests Panel: Visible only to Medical Staff and Government Employee.
+  //   Common User has dedicated inquiry/availability views.
+  const canViewRequestsPanel = isMedicalStaff || isGovEmployee || isPulseLinkEmployee;
+
+  // Guard Navigation: Intercept any tab access if not passed intake/waiting clearance
+  const guardNavigation = (targetTab?: PulseLinkTab, targetView?: 'landing' | 'dashboard' | 'login'): boolean => {
+    if (!isGateApproved) {
+      soundFx.playEmergencyBeep();
+      setGateGuardError(
+        'MANDATORY GATE ACCESS RESTRICTED: Complete intake details and receive verification clearance before navigating to operational tabs.'
+      );
+      setViewMode('login');
+      return false;
+    }
+
+    // Role-specific route guards
+    if (isCommonUser) {
+      if (targetTab === 'corridors' || targetView === 'landing') {
+        soundFx.playEmergencyBeep();
+        setGateGuardError('Common User profile is restricted to Availability, Registrations, and Direct Inquiries. Command Center and Overview are restricted.');
+        return false;
+      }
+      if (targetTab === 'requests') {
+        soundFx.playEmergencyBeep();
+        setGateGuardError('Internal Requests dispatch console is restricted to verified Medical Staff and Government Officers.');
+        return false;
+      }
+    }
+
+    if (isMedicalStaff && targetTab === 'corridors') {
+      // Allowed Command Center, but map is excluded within the component
+    }
+
+    setGateGuardError(null);
+    if (targetView) setViewMode(targetView);
+    if (targetTab) setActiveTab(targetTab);
+    return true;
+  };
+
+  const submitIntake = (data: VerificationUserData) => {
     const enrichedData = {
       ...data,
       verifiedAt: new Date().toISOString()
@@ -174,30 +308,56 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // ignore
     }
 
-    // Sync selected city if user entered one of our supported cities
-    const matchedCity = SUPPORTED_CITIES.find(
-      c => c.name.toLowerCase() === data.city.toLowerCase() || c.id.toLowerCase() === data.city.toLowerCase()
-    );
-    if (matchedCity) {
-      setSelectedCityState(matchedCity);
-      try {
-        localStorage.setItem('pulselink_selected_city', matchedCity.id);
-      } catch {
-        // ignore
-      }
-    }
+    // Move to Waiting Area stage
+    setGateStatus('waiting');
+    setGateGuardError(null);
+    soundFx.playSuccessChime();
+  };
 
-    if (data.userCategory === 'gov_employee') {
-      setCurrentRole('ambulance_dispatch');
-    } else if (data.userCategory === 'medical_staff') {
+  const completeGateAndEnter = () => {
+    setGateStatus('approved');
+    setGateGuardError(null);
+    soundFx.playSuccessChime();
+
+    // Divert into tailored interface per section 2:
+    if (isCommonUser) {
+      // Common User (Patient / Family): Availability view
+      setViewMode('dashboard');
+      setActiveTab('user_availability');
+      setActiveSubFocus('all');
+    } else if (isMedicalStaff) {
+      // Medical Staff: Requests & Responds console
       setCurrentRole('hospital_coordinator');
+      setViewMode('dashboard');
+      setActiveTab('requests');
+      setActiveSubFocus('all');
+    } else if (isGovEmployee) {
+      // Government Employee: Full site access with Command Center / Allocation
+      setCurrentRole('ambulance_dispatch');
+      setViewMode('dashboard');
+      setActiveTab('corridors');
+      setActiveSubFocus('all');
+    } else {
+      // PulseLink Employee / Other
+      setViewMode('dashboard');
+      setActiveTab('corridors');
+      setActiveSubFocus('all');
     }
-    
-    setViewMode('dashboard');
+  };
+
+  const resetGateToIntake = () => {
+    setGateStatus('intake');
+    setViewMode('login');
+  };
+
+  const submitVerification = (data: VerificationUserData) => {
+    submitIntake(data);
   };
 
   const logoutVerification = () => {
     setVerificationUser(null);
+    setGateStatus('intake');
+    setViewMode('login');
     try {
       localStorage.removeItem('pulselink_verification_gate');
     } catch {
@@ -217,6 +377,55 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [audioMuted, setAudioMuted] = useState<boolean>(false);
   const [currentTimeString, setCurrentTimeString] = useState<string>('');
   const [themeMode, setThemeMode] = useState<'sand' | 'terracotta_dark'>('sand');
+
+  // Registries for Section 2C
+  const [hospitalRegistry] = useState<HospitalRegistryItem[]>(HOSPITAL_REGISTRY);
+  const [patientRegistry, setPatientRegistry] = useState<PatientRegistryItem[]>(PATIENT_REGISTRY);
+  const [allocationConsole, setAllocationConsole] = useState<AllocationConsoleItem[]>(INITIAL_ALLOCATIONS);
+
+  // Medicine Barcode & Internal Sequence Storage (Section 4)
+  // Decodes barcode and stores sequence internally without leaking publicly
+  const [medicineSequenceRegistry, setMedicineSequenceRegistry] = useState<
+    Record<string, { internalSequence: string; decodedPayload: string; registeredAt: string }>
+  >(() => {
+    const initialMap: Record<string, { internalSequence: string; decodedPayload: string; registeredAt: string }> = {};
+    INITIAL_MEDICINES.forEach(m => {
+      initialMap[m.batchId] = {
+        internalSequence: m.internalBarcodeSequence,
+        decodedPayload: JSON.stringify(m.decodedPayload),
+        registeredAt: new Date().toISOString()
+      };
+    });
+    return initialMap;
+  });
+
+  // User Inquiries for Common User Interface (Section 2A)
+  const [userInquiries, setUserInquiries] = useState<UserInquiryItem[]>([
+    {
+      id: 'INQ-701',
+      userName: 'Ramesh Sundaram (Family)',
+      userPhone: '9845012345',
+      userEmail: 'ramesh.sundaram@gmail.com',
+      category: 'organ',
+      query: 'Urgent assistance needed with NOTTO registration Form 7 for deceased donor liver waitlist clearance.',
+      city: 'Bengaluru',
+      timestamp: '2026-11-25 01:15 IST',
+      status: 'Assigned to Medical Officer',
+      assignedOfficer: 'Dr. C. Shantharam'
+    },
+    {
+      id: 'INQ-702',
+      userName: 'Anita Rao (Patient)',
+      userPhone: '9741098765',
+      userEmail: 'anita.rao@outlook.com',
+      category: 'blood',
+      query: 'Seeking 2 units of O- Negative PRBC for scheduled cardiac surgery at Victoria Hospital.',
+      city: 'Bengaluru',
+      timestamp: '2026-11-25 02:00 IST',
+      status: 'Action In Progress',
+      assignedOfficer: 'Praveen Kumar'
+    }
+  ]);
 
   const toggleThemeMode = () => {
     setThemeMode(prev => prev === 'sand' ? 'terracotta_dark' : 'sand');
@@ -264,7 +473,7 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const newBlock: ClearChainBlock = {
       blockNumber: nextNumber,
-      timestamp: `2026-11-18 ${nowIso}`,
+      timestamp: `2026-11-25 ${nowIso}`,
       eventType: entry.eventType,
       entityId: entry.entityId,
       summary: entry.summary,
@@ -305,7 +514,6 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           const nextWaypointIndex = (corr.waypointIndex + 1) % totalPoints;
           const nextWaypoint = corr.routePath[nextWaypointIndex];
 
-          // Small step towards target
           const stepFactor = 0.04;
           const newLat = corr.currentPosition.lat + (nextWaypoint.lat - corr.currentPosition.lat) * stepFactor;
           const newLng = corr.currentPosition.lng + (nextWaypoint.lng - corr.currentPosition.lng) * stepFactor;
@@ -338,10 +546,8 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         let targetTemp: number;
         if (isExcursionActive) {
-          // Excursion elevated temp with jitter
           targetTemp = Number((11.2 + Math.random() * 0.6).toFixed(1));
         } else {
-          // Safe cold-chain band with gentle jitter around 4.2°C
           targetTemp = Number((4.1 + Math.random() * 0.4).toFixed(1));
         }
 
@@ -355,15 +561,13 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           safeMax: 8.0
         };
 
-        const trimmed = [...prev.slice(-15), newPoint];
-        return trimmed;
+        return [...prev.slice(-15), newPoint];
       });
     }, 3500);
 
     return () => clearInterval(telemetryInterval);
   }, [isExcursionActive]);
 
-  // Current temperature getter
   const currentTemp = telemetryData.length > 0
     ? telemetryData[telemetryData.length - 1].temperature
     : 4.2;
@@ -421,8 +625,7 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }): Promise<BloodRequestItem> => {
     soundFx.playEmergencyBeep();
 
-    // Find bank with stock
-    const matchingBank = bloodBanks.find(b => (b.stock[params.bloodGroup] || 0) >= params.units) || bloodBanks[2]; // Rashtrotthana has high stock
+    const matchingBank = bloodBanks.find(b => (b.stock[params.bloodGroup] || 0) >= params.units) || bloodBanks[2];
 
     const newReqId = `req-b-${Math.floor(100 + Math.random() * 900)}`;
     const newRequest: BloodRequestItem = {
@@ -436,10 +639,25 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       matchedBank: matchingBank.bankName,
       assignedVehicleId: 'KA-04-TR-4102',
       timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' IST',
-      etaMinutes: 14
+      etaMinutes: 14,
+      bloodGroupCheck: {
+        donorGroup: params.bloodGroup,
+        compatibleRecipients: [params.bloodGroup],
+        rhFactor: params.bloodGroup.includes('+') ? 'Positive' : 'Negative',
+        crossMatchResult: 'COMPATIBLE'
+      },
+      bloodConditionAndQuality: {
+        storageCondition: '2°C to 6°C Monitored CPDA-1 Refrigerated Storage',
+        screeningCertified: true,
+        screeningDetails: 'HIV-1/2, HBsAg, HCV, Syphilis, Malaria Non-Reactive (NABL Certified)',
+        qualityStatus: 'Pristine',
+        hematocritPercent: 42,
+        hemolysisPercent: 0.18
+      },
+      quantityNeeded: params.units,
+      urgencyLevel: params.urgency === 'Immediate (OT Critical)' ? 'Critical (OT Immediate)' : 'Urgent (<2 hrs)'
     };
 
-    // Deduct stock from bank
     setBloodBanks(prev => prev.map(b => {
       if (b.id === matchingBank.id) {
         const currentQty = b.stock[params.bloodGroup] || 0;
@@ -504,13 +722,12 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsExcursionActive(true);
     soundFx.playExcursionAlarm();
 
-    // Mark current active cold-chain batch as quarantined
     setMedicines(prev => prev.map(m => {
       if (m.batchId === 'PL-MED-2026-9042') {
         return {
           ...m,
           quarantineState: true,
-          verificationStatus: 'FLAGGED_DUPLICATE' // marked for inspection
+          verificationStatus: 'FLAGGED_DUPLICATE'
         };
       }
       return m;
@@ -559,6 +776,166 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return found || null;
   };
 
+  // Barcode & Internal Sequence Storage (Section 4)
+  const decodeAndStoreBarcode = (barcodeInput: string) => {
+    const trimmed = barcodeInput.trim();
+    // Check if matches batch or internal sequence
+    const found = medicines.find(
+      m => m.batchId.toLowerCase() === trimmed.toLowerCase() ||
+           m.internalBarcodeSequence.toLowerCase() === trimmed.toLowerCase() ||
+           trimmed.includes(m.batchId)
+    );
+
+    if (found) {
+      // Keep internal sequence safely stored in our internal registry
+      const internalSeq = found.internalBarcodeSequence;
+      setMedicineSequenceRegistry(prev => ({
+        ...prev,
+        [found.batchId]: {
+          internalSequence: internalSeq,
+          decodedPayload: JSON.stringify(found.decodedPayload),
+          registeredAt: new Date().toISOString()
+        }
+      }));
+
+      soundFx.playSuccessChime();
+      return {
+        success: true,
+        batch: found,
+        decodedInternalSeq: internalSeq,
+        message: `Barcode successfully authenticated. Decoded internal sequence safely stored in PulseLink Secure Internal Ledger (Registry ID: SEC-${found.batchId.slice(-4)}).`
+      };
+    }
+
+    soundFx.playEmergencyBeep();
+    return {
+      success: false,
+      message: 'Unrecognized barcode syntax or sequence mismatch. Not found in verified CDSCO registry.'
+    };
+  };
+
+  // Request Help of Medical Personnel (Section 2A & 3)
+  const requestMedicalPersonnelHelp = async (registrationType: string, organId?: string) => {
+    soundFx.playSuccessChime();
+    const organItem = organTransfers.find(o => o.id === organId);
+    const newInquiry: UserInquiryItem = {
+      id: `HELP-${Math.floor(1000 + Math.random() * 9000)}`,
+      userName: verificationUser?.fullName || 'Family of Patient',
+      userPhone: verificationUser?.phoneWhatsapp || '9313264332',
+      userEmail: verificationUser?.email || 'contact@pulselink.in',
+      category: 'organ',
+      query: `Assistance requested for mandatory statutory registration [${registrationType}] regarding ${organItem ? `${organItem.organ} (${organItem.bloodGroup})` : 'Organ Allocation'}. Requested prompt nodal clinician contact.`,
+      city: selectedCity.name,
+      timestamp: new Date().toLocaleTimeString('en-IN', { hour12: false }) + ' IST',
+      status: 'Assigned to Medical Officer',
+      assignedOfficer: organItem?.governmentRegistrations.contactOfficer || 'Dr. C. Shantharam'
+    };
+
+    setUserInquiries(prev => [newInquiry, ...prev]);
+
+    await addAuditLog({
+      eventType: 'DISPATCH_CREATED',
+      entityId: newInquiry.id,
+      summary: `PATIENT REGISTRATION ASSISTANCE ESCALATED: Medical personnel dispatched to guide patient family through ${registrationType}. Contact: ${newInquiry.userName} (${newInquiry.userPhone}).`,
+      actor: currentUser.name,
+      actorRole: 'Intake Support Coordinator',
+      location: selectedCity.name
+    });
+  };
+
+  // Common User Inquiries (Section 2A)
+  const submitUserInquiry = async (category: 'organ' | 'blood' | 'medicine' | 'general', queryText: string) => {
+    soundFx.playSuccessChime();
+    const newInq: UserInquiryItem = {
+      id: `INQ-${Math.floor(100 + Math.random() * 900)}`,
+      userName: verificationUser?.fullName || 'Guest User',
+      userPhone: verificationUser?.phoneWhatsapp || '9313264332',
+      userEmail: verificationUser?.email || 'patient@pulselink.in',
+      category,
+      query: queryText,
+      city: selectedCity.name,
+      timestamp: new Date().toLocaleTimeString('en-IN', { hour12: false }) + ' IST',
+      status: 'Received',
+      assignedOfficer: 'PulseLink Duty Medical Officer'
+    };
+
+    setUserInquiries(prev => [newInq, ...prev]);
+
+    await addAuditLog({
+      eventType: 'DISPATCH_CREATED',
+      entityId: newInq.id,
+      summary: `User Inquiry Submitted [${category.toUpperCase()}]: "${queryText.slice(0, 70)}..." from ${newInq.userName}.`,
+      actor: newInq.userName,
+      actorRole: 'Common User / Patient Representative',
+      location: selectedCity.name
+    });
+  };
+
+  // Government Allocation Console Approvals & Deallocations (Section 2C)
+  const approveAllocation = async (id: string) => {
+    setAllocationConsole(prev => prev.map(item => {
+      if (item.id === id) {
+        return { ...item, officerApprovalStatus: 'APPROVED' };
+      }
+      return item;
+    }));
+
+    // Update patient registry status
+    const alloc = allocationConsole.find(a => a.id === id);
+    if (alloc) {
+      setPatientRegistry(prev => prev.map(p => {
+        if (p.id === alloc.patientId) {
+          return { ...p, allocationStatus: 'ALLOCATED' };
+        }
+        return p;
+      }));
+    }
+
+    soundFx.playSuccessChime();
+    await addAuditLog({
+      eventType: 'HUMAN_OVERRIDE',
+      entityId: id,
+      summary: `GOVERNMENT STATUTORY APPROVAL: Allocation Console Item ${id} ratified by Nodal Officer ${currentUser.name}. Organ allocated based on cross-match and HLA reports.`,
+      actor: currentUser.name,
+      actorRole: 'State Organ Allocation Authority (SOTTO/ROTTO)',
+      location: selectedCity.name
+    });
+  };
+
+  const deallocateItem = async (id: string, reason: string) => {
+    setAllocationConsole(prev => prev.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          officerApprovalStatus: 'DEALLOCATED',
+          clinicalReasoning: `DEALLOCATED: ${reason}. ${item.clinicalReasoning}`
+        };
+      }
+      return item;
+    }));
+
+    const alloc = allocationConsole.find(a => a.id === id);
+    if (alloc) {
+      setPatientRegistry(prev => prev.map(p => {
+        if (p.id === alloc.patientId) {
+          return { ...p, allocationStatus: 'DEALLOCATED' };
+        }
+        return p;
+      }));
+    }
+
+    soundFx.playEmergencyBeep();
+    await addAuditLog({
+      eventType: 'HUMAN_OVERRIDE',
+      entityId: id,
+      summary: `GOVERNMENT STATUTORY DEALLOCATION: Allocation Item ${id} deallocated. Reason: "${reason}". Officer: ${currentUser.name}.`,
+      actor: currentUser.name,
+      actorRole: 'State Organ Allocation Authority (SOTTO/ROTTO)',
+      location: selectedCity.name,
+      isWarning: true
+    });
+  };
+
   // Human Override in FairRoute
   const applyHumanOverride = async (candidateId: string, clinicalReason: string, approverId: string) => {
     const target = candidates.find(c => c.recipientId === candidateId);
@@ -600,10 +977,27 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setActiveTab,
       activeSubFocus,
       setActiveSubFocus,
+      gateStatus,
+      isGateApproved,
+      gateGuardError,
+      setGateGuardError,
+      guardNavigation,
+      submitIntake,
+      completeGateAndEnter,
+      resetGateToIntake,
       currentRole,
       setCurrentRole,
       currentUser,
       allProfiles: USER_PROFILES,
+      userCategory,
+      isCommonUser,
+      isMedicalStaff,
+      isGovEmployee,
+      isPulseLinkEmployee,
+      canViewMap,
+      canViewOrganOriginLocation,
+      canViewCommandCenter,
+      canViewRequestsPanel,
       selectedCity,
       setSelectedCity,
       supportedCities: SUPPORTED_CITIES,
@@ -615,6 +1009,7 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       selectedCorridorId,
       setSelectedCorridorId,
       organTransfers,
+      requestMedicalPersonnelHelp,
       bloodBanks,
       bloodRequests,
       broadcastEmergencyBlood,
@@ -626,6 +1021,15 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       simulateTemperatureExcursion,
       resetTemperatureExcursion,
       verifyMedicineBatch,
+      medicineSequenceRegistry,
+      decodeAndStoreBarcode,
+      hospitalRegistry,
+      patientRegistry,
+      allocationConsole,
+      approveAllocation,
+      deallocateItem,
+      userInquiries,
+      submitUserInquiry,
       candidates,
       applyHumanOverride,
       auditBlocks,

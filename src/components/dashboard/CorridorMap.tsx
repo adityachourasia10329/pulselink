@@ -2,15 +2,13 @@ import React, { useState } from 'react';
 import { usePulseLink } from '../../context/PulseLinkContext';
 import { BENGALURU_HOSPITALS } from '../../data/mockData';
 import { 
-  ShieldAlert, 
-  CheckCircle2, 
   Navigation, 
   Zap, 
-  AlertTriangle, 
   Radio, 
   Flame, 
-  PhoneCall, 
-  MapPin
+  MapPin,
+  ShieldCheck,
+  Truck
 } from 'lucide-react';
 
 export const CorridorMap: React.FC = () => {
@@ -20,18 +18,18 @@ export const CorridorMap: React.FC = () => {
     setSelectedCorridorId, 
     togglePoliceClearance,
     currentTimeString,
-    selectedCity
+    selectedCity,
+    canViewMap,
+    canViewOrganOriginLocation
   } = usePulseLink();
 
   const [selectedHospitalId, setSelectedHospitalId] = useState<string>('hosp_narayana');
-  const [showTrafficBottlenecks, setShowTrafficBottlenecks] = useState(true);
+  const [showTrafficBottlenecks] = useState(true);
 
   const activeCorridor = corridors.find(c => c.id === selectedCorridorId) || corridors[0];
   const selectedHospital = BENGALURU_HOSPITALS.find(h => h.id === selectedHospitalId) || BENGALURU_HOSPITALS[0];
 
   // Map coordinates projection helper (scales Bengaluru bounding box into SVG 800x600)
-  // Lat: 12.68 to 13.12 (South to North)
-  // Lng: 77.36 to 77.82 (West to East)
   const projectCoords = (lat: number, lng: number): { x: number; y: number } => {
     const minLat = 12.68;
     const maxLat = 13.12;
@@ -39,7 +37,6 @@ export const CorridorMap: React.FC = () => {
     const maxLng = 77.82;
 
     const x = ((lng - minLng) / (maxLng - minLng)) * 740 + 30;
-    // Invert Y because latitude increases upwards
     const y = ((maxLat - lat) / (maxLat - minLat)) * 520 + 40;
     return { x, y };
   };
@@ -54,12 +51,12 @@ export const CorridorMap: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-bone-300">
             <Radio className="w-3.5 h-3.5 text-vermilion animate-pulse" />
-            <span>Bengaluru Metropolitan Traffic Management Center</span>
+            <span>{selectedCity.name} Metropolitan Traffic Management Center</span>
             <span className="text-bone-400">•</span>
             <span className="text-sage">Automated Signal Preemption Engine</span>
           </div>
           <h2 className="font-serif text-2xl font-bold text-bone-100 mt-1">
-            Live Green Corridor &amp; Traffic Radar
+            {canViewMap ? 'Live Green Corridor & Traffic Radar' : 'Medical Operations Command & Real-Time ETA Tracking'}
           </h2>
         </div>
 
@@ -86,342 +83,374 @@ export const CorridorMap: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Map & Telemetry Split View */}
+      {/* Main Split View: Map (if allowed) or Telemetry ETA Console (if map is restricted) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left Side: Interactive Vector Map (8 cols) */}
+        {/* Left Side: Interactive Map (if canViewMap) OR ETA Tracking Console (if !canViewMap per Rule 1.2a) */}
         <div className="lg:col-span-8 bg-bottle-950 border border-bottle-700 rounded-xl overflow-hidden relative shadow-2xl flex flex-col">
           
-          {/* Map Header Status Bar */}
+          {/* Header Status Bar */}
           <div className="bg-bottle-900/90 border-b border-bottle-700/80 px-4 py-2.5 flex items-center justify-between text-xs font-mono">
             <div className="flex items-center space-x-3">
               <span className="text-bone-300 flex items-center space-x-1">
                 <Navigation className="w-3.5 h-3.5 text-bone-300" />
                 <span>Sector: {selectedCity.name.toUpperCase()}-METRO ({selectedCity.code})</span>
               </span>
-              <span className="text-bone-400">|</span>
-              <span className="text-sage flex items-center space-x-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
-                <span>GPS LOCK: 12 SATELLITES</span>
+              <span className="text-bone-400">•</span>
+              <span className="text-bone-300">
+                Route: <strong className="text-bone-100">{activeCorridor.code}</strong>
               </span>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-1.5 cursor-pointer text-bone-300 hover:text-bone-100">
-                <input 
-                  type="checkbox" 
-                  checked={showTrafficBottlenecks} 
-                  onChange={e => setShowTrafficBottlenecks(e.target.checked)}
-                  className="rounded border-bottle-600 bg-bottle-900 text-vermilion focus:ring-0 text-xs"
-                />
-                <span className="text-[11px]">Show Bottlenecks</span>
-              </label>
-              <span className="text-bone-400 font-bold">{currentTimeString}</span>
+            <div className="flex items-center space-x-2">
+              <span className="text-bone-400">Time:</span>
+              <span className="text-bone-100 font-bold">{currentTimeString}</span>
             </div>
           </div>
 
-          {/* Interactive SVG Radar Canvas */}
-          <div className="relative w-full h-[520px] bg-gradient-to-b from-bottle-950 to-bottle-900 select-none overflow-hidden border-y border-bottle-700">
-            
-            {/* Grid Pattern Background */}
-            <svg className="absolute inset-0 w-full h-full opacity-25 pointer-events-none">
-              <defs>
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" className="text-terracotta-400/30" strokeWidth="0.5" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-
-            {/* SVG Map Lines & Waypoints */}
-            <svg className="w-full h-full" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
+          {!canViewMap ? (
+            /* RULE 1.2a ENFORCEMENT: MEDICAL STAFF & COMMON USERS DO NOT SEE MAP */
+            <div className="p-6 sm:p-8 space-y-6 flex-1 flex flex-col justify-between">
               
-              {/* Other inactive corridor paths (dimmed) */}
-              {corridors.filter(c => c.id !== activeCorridor.id).map(corr => {
-                const pathStr = corr.routePath.map((p, idx) => {
-                  const pt = projectCoords(p.lat, p.lng);
-                  return `${idx === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`;
-                }).join(' ');
+              {/* Security Banner */}
+              <div className="p-4 rounded-xl bg-bottle-900 border-2 border-sage/60 text-xs font-mono text-bone-200 space-y-2 shadow-lg">
+                <div className="flex items-center space-x-2 text-sage font-bold">
+                  <ShieldCheck className="w-5 h-5 text-sage" />
+                  <span>SECURITY RULE 1.2a COMPLIANCE: MAP &amp; GPS VISUALS MASKED</span>
+                </div>
+                <p className="text-bone-300 font-sans leading-relaxed text-xs">
+                  Per Rule 1.2a and clinical security protocols, medical personnel and common users track real-time ETA, dispatch pipeline status, police clearance, and cold-chain viability telemetry without geographic map tracking or donor origin coordinates.
+                </p>
+              </div>
 
-                return (
-                  <path
-                    key={corr.id}
-                    d={pathStr}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeDasharray="4 4"
-                    className="text-bottle-600/60 opacity-60"
-                  />
-                );
-              })}
+              {/* Large Real-Time ETA Card */}
+              <div className="bg-bottle-900 border border-bottle-700 rounded-2xl p-6 shadow-2xl space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-bottle-800 pb-3">
+                  <div>
+                    <span className="text-[10px] font-mono text-bone-400 uppercase tracking-wider block">
+                      Destination Hospital Node
+                    </span>
+                    <h3 className="font-serif text-2xl font-bold text-bone-100">
+                      {activeCorridor.destination.name}
+                    </h3>
+                    <p className="text-xs text-bone-300 font-mono mt-0.5">
+                      Assigned Vehicle: <strong className="text-bone-100">{activeCorridor.vehicleId}</strong> ({activeCorridor.vehicleType})
+                    </p>
+                  </div>
 
-              {/* Active Corridor Glow Filter */}
-              <defs>
-                <filter id="corridor-glow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="4" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
+                  <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold uppercase self-start sm:self-auto ${
+                    activeCorridor.policeClearanceActive
+                      ? 'bg-vermilion/20 text-vermilion border border-vermilion/50 animate-pulse'
+                      : 'bg-amber/20 text-amber border border-amber/40'
+                  }`}>
+                    {activeCorridor.policeClearanceActive ? 'Priority Green Clearance Active' : 'Standard Emergency Lane'}
+                  </span>
+                </div>
 
-              {/* Active Corridor Glowing Road Route */}
-              {(() => {
-                const pathStr = activeCorridor.routePath.map((p, idx) => {
-                  const pt = projectCoords(p.lat, p.lng);
-                  return `${idx === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`;
-                }).join(' ');
+                {/* ETA Metric Highlights */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+                  <div className="bg-bottle-950 p-4 rounded-xl border border-bottle-800">
+                    <span className="text-[10px] text-bone-400 font-mono block">Standard Transit ETA</span>
+                    <span className="font-mono text-2xl font-bold text-bone-300 mt-1 block">
+                      {activeCorridor.standardGpsEtaMinutes} min
+                    </span>
+                    <span className="text-[10px] text-bone-400 font-mono">Normal City Congestion</span>
+                  </div>
 
-                return (
-                  <g>
-                    {/* Outer Glow Halo */}
-                    <path
-                      d={pathStr}
-                      fill="none"
-                      stroke={activeCorridor.policeClearanceActive ? '#0C45B0' : '#2E7D32'}
-                      strokeWidth="8"
-                      strokeOpacity="0.3"
-                      filter="url(#corridor-glow)"
+                  <div className="bg-bottle-950 p-4 rounded-xl border border-vermilion/60 shadow-inner">
+                    <span className="text-[10px] text-vermilion font-mono uppercase font-bold block">PulseLink Green ETA</span>
+                    <span className="font-mono text-3xl font-bold text-vermilion mt-1 block">
+                      {activeCorridor.greenCorridorEtaMinutes} min
+                    </span>
+                    <span className="text-[10px] text-sage font-mono">Preempted Corridor</span>
+                  </div>
+
+                  <div className="bg-bottle-950 p-4 rounded-xl border border-sage/60">
+                    <span className="text-[10px] text-sage font-mono uppercase font-bold block">Critical Time Saved</span>
+                    <span className="font-mono text-3xl font-bold text-sage mt-1 block">
+                      +{activeCorridor.timeSavedMinutes} min
+                    </span>
+                    <span className="text-[10px] text-bone-300 font-mono">Cold Ischemia Preservation</span>
+                  </div>
+                </div>
+
+                {/* Preempted Intersections Progress */}
+                <div className="p-4 rounded-xl bg-bottle-950 border border-bottle-800 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-bone-300">Preempted Traffic Signal Junctions:</span>
+                    <span className="font-bold text-bone-100">
+                      {activeCorridor.clearedIntersectionsCount} / {activeCorridor.totalIntersectionsCount} Cleared (Priority Green)
+                    </span>
+                  </div>
+                  <div className="w-full bg-bottle-900 h-2.5 rounded-full overflow-hidden border border-bottle-800">
+                    <div 
+                      className={`h-full transition-all duration-500 ${activeCorridor.policeClearanceActive ? 'bg-vermilion' : 'bg-sage'}`}
+                      style={{ width: `${(activeCorridor.clearedIntersectionsCount / activeCorridor.totalIntersectionsCount) * 100}%` }}
                     />
-                    {/* Core Line */}
-                    <path
-                      d={pathStr}
-                      fill="none"
-                      stroke={activeCorridor.policeClearanceActive ? '#2E69DB' : '#2E7D32'}
-                      strokeWidth="3.5"
-                      strokeDasharray={activeCorridor.policeClearanceActive ? 'none' : '6 4'}
-                    />
-                  </g>
-                );
-              })()}
+                  </div>
+                  <div className="flex justify-between text-[10px] font-mono text-bone-400 pt-1">
+                    <span>Current Speed: {activeCorridor.currentSpeedKmh} km/h</span>
+                    <span>Transit Distance: {activeCorridor.distanceKm || 18.4} km</span>
+                  </div>
+                </div>
 
-              {/* Waypoints along Active Route */}
-              {activeCorridor.routePath.map((wp, idx) => {
-                const pt = projectCoords(wp.lat, wp.lng);
-                return (
-                  <circle
-                    key={idx}
-                    cx={pt.x}
-                    cy={pt.y}
-                    r={idx === 0 || idx === activeCorridor.routePath.length - 1 ? 5 : 3}
-                    fill={activeCorridor.policeClearanceActive ? '#0C45B0' : '#2E7D32'}
-                    stroke="var(--color-surface)"
-                    strokeWidth="1.5"
-                  />
-                );
-              })}
-
-              {/* Traffic Bottleneck Warning Points */}
-              {showTrafficBottlenecks && (
-                <g>
-                  {/* Silk Board Junction */}
-                  {(() => {
-                    const sb = projectCoords(12.9175, 77.6238);
-                    return (
-                      <g transform={`translate(${sb.x}, ${sb.y})`}>
-                        <circle r="12" fill="#F59E0B" fillOpacity="0.2" className="animate-ping" />
-                        <circle r="5" fill="#F59E0B" />
-                        <text x="8" y="4" fill="#F59E0B" fontSize="10" fontFamily="monospace" fontWeight="bold">
-                          Silk Board Congestion
-                        </text>
-                      </g>
-                    );
-                  })()}
-
-                  {/* K.R. Market / Anand Rao */}
-                  {(() => {
-                    const km = projectCoords(12.9710, 77.5770);
-                    return (
-                      <g transform={`translate(${km.x}, ${km.y})`}>
-                        <circle r="4" fill="#F59E0B" />
-                        <text x="8" y="4" fill="#F59E0B" fontSize="9" fontFamily="monospace">
-                          City Market Zone
-                        </text>
-                      </g>
-                    );
-                  })()}
-                </g>
-              )}
-
-              {/* Hospital Nodes */}
-              {BENGALURU_HOSPITALS.map(hosp => {
-                const pt = projectCoords(hosp.coordinates.lat, hosp.coordinates.lng);
-                const isOrigin = hosp.id === activeCorridor.origin.id;
-                const isDest = hosp.id === activeCorridor.destination.id;
-                const isSelected = hosp.id === selectedHospitalId;
-
-                let markerFill = 'var(--color-border-elevated)';
-                let markerSize = 6;
-                if (isOrigin) {
-                  markerFill = '#2E7D32';
-                  markerSize = 8;
-                } else if (isDest) {
-                  markerFill = '#0C45B0';
-                  markerSize = 8;
-                }
-
-                return (
-                  <g 
-                    key={hosp.id} 
-                    transform={`translate(${pt.x}, ${pt.y})`}
-                    onClick={() => setSelectedHospitalId(hosp.id)}
-                    className="cursor-pointer group"
+                {/* Police Clearance Action Button */}
+                <div className="pt-2 flex justify-end">
+                  <button
+                    onClick={() => togglePoliceClearance(activeCorridor.id)}
+                    className={`flex items-center space-x-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-xl ${
+                      activeCorridor.policeClearanceActive
+                        ? 'bg-vermilion text-bone-50 hover:bg-vermilion-dark ring-2 ring-vermilion/50 animate-pulse'
+                        : 'bg-cobalt text-white hover:bg-cobalt-dark shadow-cobalt/30'
+                    }`}
                   >
-                    {/* Ring if selected */}
-                    {isSelected && (
-                      <circle r={markerSize + 6} fill="none" stroke="var(--color-text-primary)" strokeWidth="1.5" strokeDasharray="3 3" className="animate-spin" />
-                    )}
+                    <Zap className="w-4 h-4" />
+                    <span>
+                      {activeCorridor.policeClearanceActive ? 'Police Clearance Active' : 'Request Traffic Signal Override'}
+                    </span>
+                  </button>
+                </div>
+              </div>
 
-                    {/* Node Circle */}
-                    <circle 
-                      r={markerSize} 
-                      fill={markerFill} 
-                      stroke="var(--color-surface)" 
-                      strokeWidth={isSelected ? '2' : '1'} 
-                      className="group-hover:scale-125 transition-transform"
+            </div>
+          ) : (
+            /* FULL INTERACTIVE MAP FOR GOVERNMENT EMPLOYEES & PULSELINK OPS */
+            <div className="relative flex-1 min-h-[500px]">
+              <svg 
+                viewBox="0 0 800 600" 
+                className="w-full h-full select-none"
+                style={{ backgroundColor: '#092119' }}
+              >
+                {/* Background Grid */}
+                <defs>
+                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0F372B" strokeWidth="1" />
+                  </pattern>
+                </defs>
+                <rect width="800" height="600" fill="url(#grid)" />
+
+                {/* Major Arterial Roads */}
+                <g stroke="#164A3A" strokeWidth="2" fill="none" strokeLinecap="round">
+                  <path d="M 120 40 L 720 540" />
+                  <path d="M 680 80 L 100 480" />
+                  <circle cx="400" cy="300" r="140" stroke="#164A3A" strokeWidth="1.5" strokeDasharray="4 4" fill="none" />
+                </g>
+
+                {/* Active Corridor Route Path */}
+                {activeCorridor.routePath.length > 1 && (
+                  <path
+                    d={activeCorridor.routePath.reduce((acc, pt, i) => {
+                      const p = projectCoords(pt.lat, pt.lng);
+                      return i === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
+                    }, '')}
+                    fill="none"
+                    stroke={activeCorridor.policeClearanceActive ? '#0C45B0' : '#2E7D32'}
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+
+                {/* Waypoints */}
+                {activeCorridor.routePath.map((wp, idx) => {
+                  const pt = projectCoords(wp.lat, wp.lng);
+                  return (
+                    <circle
+                      key={idx}
+                      cx={pt.x}
+                      cy={pt.y}
+                      r={idx === 0 || idx === activeCorridor.routePath.length - 1 ? 5 : 3}
+                      fill={activeCorridor.policeClearanceActive ? '#0C45B0' : '#2E7D32'}
+                      stroke="#092119"
+                      strokeWidth="1.5"
                     />
+                  );
+                })}
 
-                    {/* Label */}
-                    <text 
-                      x="9" 
-                      y="4" 
-                      fill={isSelected ? 'var(--color-text-primary)' : 'var(--color-text-muted)'} 
-                      fontSize={isOrigin || isDest || isSelected ? '11' : '9'} 
-                      fontWeight={isOrigin || isDest || isSelected ? 'bold' : 'normal'}
-                      fontFamily="sans-serif"
-                      className="drop-shadow-md select-none group-hover:fill-terracotta"
+                {/* Traffic Bottlenecks */}
+                {showTrafficBottlenecks && (
+                  <g>
+                    {(() => {
+                      const sb = projectCoords(12.9175, 77.6238);
+                      return (
+                        <g transform={`translate(${sb.x}, ${sb.y})`}>
+                          <circle r="12" fill="#F59E0B" fillOpacity="0.2" className="animate-ping" />
+                          <circle r="5" fill="#F59E0B" />
+                          <text x="8" y="4" fill="#F59E0B" fontSize="10" fontFamily="monospace" fontWeight="bold">
+                            Silk Board Congestion
+                          </text>
+                        </g>
+                      );
+                    })()}
+                  </g>
+                )}
+
+                {/* Hospital Nodes */}
+                {BENGALURU_HOSPITALS.map(hosp => {
+                  const pt = projectCoords(hosp.coordinates.lat, hosp.coordinates.lng);
+                  const isOrigin = hosp.id === activeCorridor.origin.id;
+                  const isDest = hosp.id === activeCorridor.destination.id;
+                  const isSelected = hosp.id === selectedHospitalId;
+
+                  let markerFill = '#265444';
+                  let markerSize = 6;
+                  if (isOrigin) {
+                    markerFill = '#2E7D32';
+                    markerSize = 8;
+                  } else if (isDest) {
+                    markerFill = '#0C45B0';
+                    markerSize = 8;
+                  }
+
+                  return (
+                    <g 
+                      key={hosp.id} 
+                      transform={`translate(${pt.x}, ${pt.y})`}
+                      onClick={() => setSelectedHospitalId(hosp.id)}
+                      className="cursor-pointer group"
                     >
-                      {hosp.shortName}
+                      {isSelected && (
+                        <circle r={markerSize + 6} fill="none" stroke="#EFE7DA" strokeWidth="1.5" strokeDasharray="3 3" className="animate-spin" />
+                      )}
+                      <circle 
+                        r={markerSize} 
+                        fill={markerFill} 
+                        stroke="#092119" 
+                        strokeWidth={isSelected ? '2' : '1'} 
+                        className="group-hover:scale-125 transition-transform"
+                      />
+                      <text 
+                        x="9" 
+                        y="4" 
+                        fill={isSelected ? '#EFE7DA' : '#A89F91'} 
+                        fontSize={isOrigin || isDest || isSelected ? '11' : '9'} 
+                        fontWeight={isOrigin || isDest || isSelected ? 'bold' : 'normal'}
+                        fontFamily="sans-serif"
+                      >
+                        {hosp.shortName}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* Moving Vehicle */}
+                <g transform={`translate(${currentVehiclePos.x}, ${currentVehiclePos.y})`}>
+                  <circle 
+                    r="24" 
+                    fill={activeCorridor.policeClearanceActive ? '#0C45B0' : '#2E7D32'} 
+                    fillOpacity="0.2" 
+                    className="animate-ping" 
+                  />
+                  <circle 
+                    r="12" 
+                    fill="#0F372B" 
+                    stroke={activeCorridor.policeClearanceActive ? '#0C45B0' : '#2E7D32'} 
+                    strokeWidth="2.5" 
+                  />
+                  <circle 
+                    r="4" 
+                    fill={activeCorridor.policeClearanceActive ? '#2E69DB' : '#2E7D32'} 
+                  />
+                  <g transform="translate(18, -12)">
+                    <rect 
+                      x="0" 
+                      y="0" 
+                      width="145" 
+                      height="28" 
+                      rx="4" 
+                      fill="#0F372B" 
+                      stroke={activeCorridor.policeClearanceActive ? '#0C45B0' : '#265444'} 
+                      strokeWidth="1.2" 
+                    />
+                    <text x="6" y="12" fill="#EFE7DA" fontSize="9" fontFamily="monospace" fontWeight="bold">
+                      {activeCorridor.vehicleId}
+                    </text>
+                    <text x="6" y="22" fill={activeCorridor.policeClearanceActive ? '#0C45B0' : '#2E7D32'} fontSize="8" fontFamily="monospace">
+                      {activeCorridor.currentSpeedKmh} km/h • {activeCorridor.cargoType}
                     </text>
                   </g>
-                );
-              })}
-
-              {/* Live Animated Ambulance / Cargo Vehicle Marker */}
-              <g transform={`translate(${currentVehiclePos.x}, ${currentVehiclePos.y})`}>
-                {/* Radar sweep / pulse around vehicle */}
-                <circle 
-                  r="24" 
-                  fill={activeCorridor.policeClearanceActive ? '#0C45B0' : '#2E7D32'} 
-                  fillOpacity="0.2" 
-                  className="animate-ping" 
-                />
-                <circle 
-                  r="14" 
-                  fill="var(--color-surface)" 
-                  stroke={activeCorridor.policeClearanceActive ? '#0C45B0' : '#2E7D32'} 
-                  strokeWidth="2.5" 
-                />
-                {/* Icon inside marker */}
-                <circle 
-                  r="4" 
-                  fill={activeCorridor.policeClearanceActive ? '#2E69DB' : '#2E7D32'} 
-                />
-                {/* Vehicle Callout Tag */}
-                <g transform="translate(18, -12)">
-                  <rect 
-                    x="0" 
-                    y="0" 
-                    width="145" 
-                    height="28" 
-                    rx="4" 
-                    fill="var(--color-surface)" 
-                    stroke={activeCorridor.policeClearanceActive ? '#0C45B0' : 'var(--color-border-elevated)'} 
-                    strokeWidth="1.2" 
-                  />
-                  <text x="6" y="12" fill="var(--color-text-primary)" fontSize="9" fontFamily="monospace" fontWeight="bold">
-                    {activeCorridor.vehicleId}
-                  </text>
-                  <text x="6" y="22" fill={activeCorridor.policeClearanceActive ? '#0C45B0' : '#2E7D32'} fontSize="8" fontFamily="monospace">
-                    {activeCorridor.currentSpeedKmh} km/h • {activeCorridor.cargoType}
-                  </text>
                 </g>
-              </g>
+              </svg>
 
-            </svg>
-
-            {/* Bottom-Left Overlay: ETA Comparison Card */}
-            <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:max-w-md bg-bottle-900/95 border border-bottle-700/90 rounded-xl p-3.5 backdrop-blur-md shadow-2xl">
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-bottle-700">
-                <div className="flex items-center space-x-2">
-                  <Flame className="w-4 h-4 text-vermilion" />
-                  <span className="font-mono text-xs font-bold text-bone-100 uppercase">
-                    Corridor Clearance Telemetry
+              {/* Bottom-Left Overlay: ETA Comparison Card */}
+              <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:max-w-md bg-bottle-900/95 border border-bottle-700/90 rounded-xl p-3.5 backdrop-blur-md shadow-2xl">
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-bottle-700">
+                  <div className="flex items-center space-x-2">
+                    <Flame className="w-4 h-4 text-vermilion" />
+                    <span className="font-mono text-xs font-bold text-bone-100 uppercase">
+                      Corridor Clearance Telemetry
+                    </span>
+                  </div>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                    activeCorridor.policeClearanceActive 
+                      ? 'bg-vermilion/20 text-vermilion border border-vermilion/40' 
+                      : 'bg-amber/20 text-amber border border-amber/40'
+                  }`}>
+                    {activeCorridor.policeClearanceActive ? 'Clearance Active' : 'Standard Escort'}
                   </span>
                 </div>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
-                  activeCorridor.policeClearanceActive 
-                    ? 'bg-vermilion/20 text-vermilion border border-vermilion/40' 
-                    : 'bg-amber/20 text-amber border border-amber/40'
-                }`}>
-                  {activeCorridor.policeClearanceActive ? 'Clearance Active' : 'Standard Escort'}
-                </span>
+
+                <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                  <div className="bg-bottle-950 p-2 rounded-lg border border-bottle-800">
+                    <p className="text-[10px] text-bone-400 font-sans">Standard GPS</p>
+                    <p className="font-mono text-base font-bold text-bone-300">
+                      {activeCorridor.standardGpsEtaMinutes} <span className="text-[11px] font-normal">min</span>
+                    </p>
+                    <p className="text-[9px] text-bone-400 mt-0.5">Heavy Traffic</p>
+                  </div>
+
+                  <div className="bg-bottle-950 p-2 rounded-lg border border-vermilion/40 shadow-inner">
+                    <p className="text-[10px] text-vermilion font-sans font-bold">PulseLink ETA</p>
+                    <p className="font-mono text-lg font-bold text-vermilion">
+                      {activeCorridor.greenCorridorEtaMinutes} <span className="text-[11px] font-normal">min</span>
+                    </p>
+                    <p className="text-[9px] text-sage font-mono mt-0.5">Optimal Path</p>
+                  </div>
+
+                  <div className="bg-bottle-950 p-2 rounded-lg border border-sage/40">
+                    <p className="text-[10px] text-sage font-sans font-bold">Time Saved</p>
+                    <p className="font-mono text-lg font-bold text-sage">
+                      +{activeCorridor.timeSavedMinutes} <span className="text-[11px] font-normal">min</span>
+                    </p>
+                    <p className="text-[9px] text-bone-300 mt-0.5">Critical Margin</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-bottle-800/80">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-bone-300 mb-1">
+                    <span>Preempted Traffic Signals:</span>
+                    <span className="font-bold text-bone-100">
+                      {activeCorridor.clearedIntersectionsCount} / {activeCorridor.totalIntersectionsCount} Cleared
+                    </span>
+                  </div>
+                  <div className="w-full bg-bottle-950 h-2 rounded-full overflow-hidden border border-bottle-800">
+                    <div 
+                      className={`h-full transition-all duration-500 ${activeCorridor.policeClearanceActive ? 'bg-vermilion' : 'bg-sage'}`}
+                      style={{ width: `${(activeCorridor.clearedIntersectionsCount / activeCorridor.totalIntersectionsCount) * 100}%` }}
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Standard vs Green Corridor ETA Delta */}
-              <div className="grid grid-cols-3 gap-2 text-center pt-1">
-                <div className="bg-bottle-950 p-2 rounded-lg border border-bottle-800">
-                  <p className="text-[10px] text-bone-400 font-sans">Standard GPS</p>
-                  <p className="font-mono text-base font-bold text-bone-300">
-                    {activeCorridor.standardGpsEtaMinutes} <span className="text-[11px] font-normal">min</span>
-                  </p>
-                  <p className="text-[9px] text-bone-400 mt-0.5">Heavy Traffic</p>
-                </div>
-
-                <div className="bg-bottle-950 p-2 rounded-lg border border-vermilion/40 shadow-inner">
-                  <p className="text-[10px] text-vermilion font-sans font-bold">PulseLink ETA</p>
-                  <p className="font-mono text-lg font-bold text-vermilion">
-                    {activeCorridor.greenCorridorEtaMinutes} <span className="text-[11px] font-normal">min</span>
-                  </p>
-                  <p className="text-[9px] text-sage font-mono mt-0.5">Optimal Path</p>
-                </div>
-
-                <div className="bg-bottle-950 p-2 rounded-lg border border-sage/40">
-                  <p className="text-[10px] text-sage font-sans font-bold">Time Saved</p>
-                  <p className="font-mono text-lg font-bold text-sage">
-                    +{activeCorridor.timeSavedMinutes} <span className="text-[11px] font-normal">min</span>
-                  </p>
-                  <p className="text-[9px] text-bone-300 mt-0.5">Critical Margin</p>
-                </div>
-              </div>
-
-              {/* Progress Bar of Intersections Cleared */}
-              <div className="mt-3 pt-2 border-t border-bottle-800/80">
-                <div className="flex items-center justify-between text-[11px] font-mono text-bone-300 mb-1">
-                  <span>Preempted Traffic Signals:</span>
-                  <span className="font-bold text-bone-100">
-                    {activeCorridor.clearedIntersectionsCount} / {activeCorridor.totalIntersectionsCount} Cleared
+              {/* Top-Right Overlay: Corridor Quick Toggle Action */}
+              <div className="absolute top-4 right-4">
+                <button
+                  onClick={() => togglePoliceClearance(activeCorridor.id)}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-xl ${
+                    activeCorridor.policeClearanceActive
+                      ? 'bg-vermilion text-bone-50 hover:bg-vermilion-dark ring-2 ring-vermilion/50 animate-pulse'
+                      : 'bg-bottle-700 text-bone-100 hover:bg-bottle-600 border border-bottle-500'
+                  }`}
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>
+                    {activeCorridor.policeClearanceActive ? 'Police Clearance Active' : 'Request Traffic Clearance'}
                   </span>
-                </div>
-                <div className="w-full bg-bottle-950 h-2 rounded-full overflow-hidden border border-bottle-800">
-                  <div 
-                    className={`h-full transition-all duration-500 ${activeCorridor.policeClearanceActive ? 'bg-vermilion' : 'bg-sage'}`}
-                    style={{ width: `${(activeCorridor.clearedIntersectionsCount / activeCorridor.totalIntersectionsCount) * 100}%` }}
-                  />
-                </div>
+                </button>
               </div>
-            </div>
 
-            {/* Top-Right Overlay: Corridor Quick Toggle Action */}
-            <div className="absolute top-4 right-4">
-              <button
-                onClick={() => togglePoliceClearance(activeCorridor.id)}
-                className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-xl ${
-                  activeCorridor.policeClearanceActive
-                    ? 'bg-vermilion text-bone-50 hover:bg-vermilion-dark ring-2 ring-vermilion/50 animate-pulse'
-                    : 'bg-bottle-700 text-bone-100 hover:bg-bottle-600 border border-bottle-500'
-                }`}
-              >
-                <Zap className="w-4 h-4" />
-                <span>
-                  {activeCorridor.policeClearanceActive ? 'Police Clearance Active' : 'Request Traffic Clearance'}
-                </span>
-              </button>
             </div>
-
-          </div>
+          )}
 
           {/* Bottom Corridor Route Details Bar */}
           <div className="bg-bottle-900 border-t border-bottle-700/80 p-3 text-xs flex flex-wrap items-center justify-between gap-3 text-bone-300">
@@ -431,7 +460,7 @@ export const CorridorMap: React.FC = () => {
             </div>
             <div className="flex items-center space-x-4 font-mono text-[11px]">
               <span>Vehicle: <strong className="text-bone-100">{activeCorridor.vehicleType}</strong></span>
-              <span>Priority: <strong className="text-vermilion">CODE RED</strong></span>
+              <span>Priority: <strong className="text-vermilion">CODE RED-7</strong></span>
             </div>
           </div>
         </div>
@@ -448,111 +477,68 @@ export const CorridorMap: React.FC = () => {
                   Node Telemetry
                 </span>
               </div>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-bottle-800 text-bone-200 border border-bottle-600">
-                {selectedHospital.zone} Bengaluru
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-bottle-950 border border-bottle-700 text-sage uppercase">
+                {selectedHospital.zone} Zone
               </span>
             </div>
 
-            <div className="mt-3">
-              <h3 className="font-serif text-lg font-bold text-bone-100">
-                {selectedHospital.name}
-              </h3>
-              <p className="text-xs text-bone-300 mt-1 leading-relaxed">
-                {selectedHospital.address}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <div className="bg-bottle-950 p-2.5 rounded-lg border border-bottle-800">
-                <p className="text-[10px] text-bone-400 uppercase font-mono">Emergency Beds</p>
-                <p className="text-lg font-bold font-mono text-bone-100 mt-0.5">
-                  {selectedHospital.activeEmergencyBeds} <span className="text-xs text-sage font-normal">Available</span>
-                </p>
+            <div className="mt-3 space-y-3 text-xs">
+              <div>
+                <h4 className="font-serif font-bold text-bone-100 text-base">{selectedHospital.name}</h4>
+                <p className="text-[11px] text-bone-400 font-mono mt-0.5">{selectedHospital.type}</p>
+                <p className="text-[11px] text-bone-300 mt-1">{selectedHospital.address}</p>
               </div>
 
-              <div className="bg-bottle-950 p-2.5 rounded-lg border border-bottle-800">
-                <p className="text-[10px] text-bone-400 uppercase font-mono">Helipad Facility</p>
-                <p className="text-lg font-bold font-mono text-bone-100 mt-0.5">
-                  {selectedHospital.hasHelipad ? (
-                    <span className="text-sage flex items-center space-x-1">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Operational</span>
-                    </span>
-                  ) : (
-                    <span className="text-bone-400">Ground Only</span>
-                  )}
-                </p>
+              <div className="grid grid-cols-2 gap-2 text-center font-mono text-xs pt-1">
+                <div className="bg-bottle-950 p-2 rounded-lg border border-bottle-800">
+                  <span className="text-[10px] text-bone-400 block">Emergency Beds</span>
+                  <span className="font-bold text-bone-100">{selectedHospital.activeEmergencyBeds} Available</span>
+                </div>
+                <div className="bg-bottle-950 p-2 rounded-lg border border-bottle-800">
+                  <span className="text-[10px] text-bone-400 block">Rooftop Helipad</span>
+                  <span className={`font-bold ${selectedHospital.hasHelipad ? 'text-sage' : 'text-bone-400'}`}>
+                    {selectedHospital.hasHelipad ? 'Operational' : 'None'}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <div className="mt-4 pt-3 border-t border-bottle-800 flex items-center justify-between text-xs">
-              <span className="text-bone-400 font-mono">Emergency Hotline:</span>
-              <a 
-                href={`tel:${selectedHospital.contactPhone}`} 
-                className="font-mono font-semibold text-bone-100 hover:text-vermilion flex items-center space-x-1"
-              >
-                <PhoneCall className="w-3.5 h-3.5" />
-                <span>{selectedHospital.contactPhone}</span>
-              </a>
+              <div className="pt-2 border-t border-bottle-800 flex items-center justify-between text-xs font-mono">
+                <span className="text-bone-400">Emergency Desk:</span>
+                <span className="text-bone-100 font-bold">{selectedHospital.contactPhone}</span>
+              </div>
             </div>
           </div>
 
-          {/* Traffic Police Preemption Clearance Card */}
-          <div className="bg-bottle-900 border border-bottle-700 rounded-xl p-4 shadow-xl">
-            <div className="flex items-center space-x-2 pb-3 border-b border-bottle-700">
-              <ShieldAlert className="w-4 h-4 text-vermilion" />
-              <h3 className="font-serif text-base font-bold text-bone-100">
-                Traffic Police Clearance Status
-              </h3>
+          {/* Active Dispatch Manifest Card */}
+          <div className="bg-bottle-900 border border-bottle-700 rounded-xl p-4 shadow-xl text-xs space-y-3">
+            <div className="flex items-center space-x-2 text-bone-300 font-mono uppercase text-xs border-b border-bottle-700 pb-2">
+              <Truck className="w-4 h-4 text-sage" />
+              <span>Dispatch Manifest</span>
             </div>
 
-            <div className="mt-3 space-y-3">
-              <div className="bg-bottle-950 p-3 rounded-lg border border-bottle-800">
-                <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                  <span className="text-bone-300">Corridor Authorization:</span>
-                  <span className={activeCorridor.policeClearanceActive ? 'text-sage font-bold' : 'text-amber'}>
-                    {activeCorridor.policeClearanceActive ? 'ACTIVE PREEMPTION' : 'PENDING APPROVAL'}
-                  </span>
-                </div>
-                <p className="text-xs text-bone-300 leading-relaxed">
-                  {activeCorridor.policeClearanceActive 
-                    ? 'Automated green signal holds active across Silk Board, Koramangala & Domlur corridors. Siren audio stream relayed to traffic command.'
-                    : 'Standard traffic conditions apply. Click "Request Traffic Clearance" to signal Bengaluru Traffic Police (BTP) central controller.'}
-                </p>
-              </div>
-
-              {/* Bottlenecks List */}
-              <div>
-                <p className="text-xs font-mono font-semibold text-bone-300 mb-1.5 uppercase">
-                  Active Monitored Bottlenecks
-                </p>
-                <div className="space-y-1.5">
-                  {activeCorridor.activeBottlenecks.map((bottleneck, idx) => (
-                    <div 
-                      key={idx} 
-                      className="flex items-start space-x-2 text-xs bg-bottle-950/60 p-2 rounded border border-bottle-800/80 text-bone-300"
-                    >
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber shrink-0 mt-0.5" />
-                      <span>{bottleneck}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <button
-                onClick={() => togglePoliceClearance(activeCorridor.id)}
-                className={`w-full py-2.5 px-4 rounded-lg font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center space-x-2 ${
-                  activeCorridor.policeClearanceActive
-                    ? 'bg-bottle-800 border border-bottle-600 text-bone-200 hover:bg-bottle-700'
-                    : 'bg-vermilion hover:bg-vermilion-dark text-bone-50 shadow-lg shadow-vermilion/20'
-                }`}
-              >
-                <Zap className="w-4 h-4" />
-                <span>
-                  {activeCorridor.policeClearanceActive ? 'Deactivate Preemption' : 'Override All Route Signals'}
+            <div className="space-y-1.5 font-mono text-[11px]">
+              <div className="flex justify-between">
+                <span className="text-bone-400">Origin Facility:</span>
+                <span className="text-bone-200">
+                  {canViewOrganOriginLocation 
+                    ? activeCorridor.origin.shortName 
+                    : '[Origin Masked per Rule 1.2a]'}
                 </span>
-              </button>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-bone-400">Destination:</span>
+                <span className="text-bone-100 font-bold">{activeCorridor.destination.shortName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-bone-400">Cargo Type:</span>
+                <span className="text-vermilion font-bold">{activeCorridor.cargoType}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-bone-400">Police Escort:</span>
+                <span className={activeCorridor.policeClearanceActive ? 'text-vermilion font-bold' : 'text-bone-300'}>
+                  {activeCorridor.policeClearanceActive ? 'Signal Override Active' : 'Standard'}
+                </span>
+              </div>
             </div>
           </div>
 

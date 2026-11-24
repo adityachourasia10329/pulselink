@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { usePulseLink } from '../context/PulseLinkContext';
+import { usePulseLink, type PulseLinkTab } from '../context/PulseLinkContext';
 import {
   ChevronDown,
   User,
@@ -14,7 +14,15 @@ import {
   MapPin,
   Check,
   Volume2,
-  VolumeX
+  VolumeX,
+  Building,
+  Users,
+  CheckSquare,
+  HelpCircle,
+  FileText,
+  Heart,
+  Shield,
+  Activity
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -37,7 +45,12 @@ export const Navbar: React.FC = () => {
     toggleAudioMute,
     currentTimeString,
     organTransfers,
-    isExcursionActive
+    isExcursionActive,
+    isGateApproved,
+    guardNavigation,
+    isCommonUser,
+    isMedicalStaff,
+    canViewRequestsPanel
   } = usePulseLink();
 
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
@@ -45,6 +58,18 @@ export const Navbar: React.FC = () => {
 
   // Check if any organ is under 60 minutes
   const urgentOrgan = organTransfers.find(o => o.remainingSeconds < 3600);
+
+  const handleNavClick = (tab?: PulseLinkTab, mode: 'landing' | 'dashboard' | 'login' = 'dashboard') => {
+    if (!isGateApproved) {
+      guardNavigation(tab, mode);
+      return;
+    }
+    const permitted = guardNavigation(tab, mode);
+    if (permitted) {
+      setViewMode(mode);
+      if (tab) setActiveTab(tab);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-bottle-900/95 backdrop-blur-md border-b border-bottle-700/80 transition-all">
@@ -96,7 +121,7 @@ export const Navbar: React.FC = () => {
           {/* Left Top Corner: New PulseLink India Tricolor & Heart Logo */}
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             <button
-              onClick={() => setViewMode('landing')}
+              onClick={() => handleNavClick(undefined, 'landing')}
               className="flex items-center text-left group focus:outline-none"
               title="PulseLink Overview"
             >
@@ -182,16 +207,16 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* 8) User Verification Pill without "B2B:" prefix */}
+            {/* User Verification Pill without "B2B:" prefix */}
             <button
-              onClick={() => setViewMode(viewMode === 'login' ? 'dashboard' : 'login')}
-              title="Click to manage clinical verification gate credentials"
+              onClick={() => setViewMode('login')}
+              title="Click to view statutory verification gate intake & clearance"
               className={`hidden md:inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full border text-xs font-mono transition-all ${viewMode === 'login'
                 ? 'border-cobalt bg-cobalt/20 text-bone-100 ring-1 ring-cobalt'
                 : 'border-bottle-700 bg-bottle-950/90 text-bone-200 hover:border-bottle-600'
                 }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
+              <span className={`w-1.5 h-1.5 rounded-full ${isGateApproved ? 'bg-sage' : 'bg-amber'} animate-pulse`} />
               <span className="truncate max-w-[120px] lg:max-w-[170px]">
                 {verificationUser ? `${verificationUser.fullName} (${verificationUser.workOrganisation})` : 'Verify Access'}
               </span>
@@ -199,112 +224,304 @@ export const Navbar: React.FC = () => {
             </button>
           </div>
 
-          {/* 5) Center Navigation Mode & Section Tabs (ALL VISIBLE WITH NO SCROLLBAR) */}
-          <nav className="flex items-center bg-bottle-950/90 p-1 rounded-xl border border-bottle-700/80 space-x-1 shrink-0 overflow-visible">
-            {/* 1. Overview */}
-            <button
-              onClick={() => setViewMode('landing')}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${viewMode === 'landing'
-                ? 'bg-bottle-700 text-bone-100 shadow-sm border border-bottle-600 font-semibold'
-                : 'text-bone-300 hover:text-bone-100'
-                }`}
-            >
-              <Home className="w-3.5 h-3.5" />
-              <span>Overview</span>
-            </button>
+          {/* Center Navigation Tabs: TAILORED ACCORDING TO ROLE & VISIBILITY GUARDRAILS */}
+          <nav className="flex items-center bg-bottle-950/90 p-1 rounded-xl border border-bottle-700/80 space-x-1 shrink-0 overflow-x-auto max-w-full">
+            
+            {/* If NOT yet gate approved, show locked gate notice or intake shortcut */}
+            {!isGateApproved ? (
+              <button
+                onClick={() => setViewMode('login')}
+                className="flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-mono text-amber bg-amber/10 border border-amber/40 animate-pulse font-semibold"
+              >
+                <Shield className="w-3.5 h-3.5 text-amber" />
+                <span>Complete Intake Clearance to Unlock Tabs</span>
+              </button>
+            ) : isCommonUser ? (
+              /* A. COMMON USER INTERFACE (Patient / Patient's Family) */
+              <>
+                <button
+                  onClick={() => handleNavClick('user_availability')}
+                  className={`flex items-center space-x-1 px-3 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'user_availability'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Activity className="w-3.5 h-3.5 text-sage" />
+                  <span>Availability (Organ, Blood, Meds)</span>
+                </button>
 
-            {/* 2. Requests Panel */}
-            <button
-              onClick={() => {
-                setViewMode('dashboard');
-                setActiveTab('requests');
-                setActiveSubFocus('all');
-              }}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'all'
-                ? 'bg-cobalt text-white shadow-sm font-semibold'
-                : 'text-bone-300 hover:text-bone-100'
-                }`}
-            >
-              <ClipboardList className="w-3.5 h-3.5" />
-              <span>Requests Panel</span>
-            </button>
+                <button
+                  onClick={() => handleNavClick('user_registrations')}
+                  className={`flex items-center space-x-1 px-3 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'user_registrations'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5 text-bone-300" />
+                  <span>Government Registrations &amp; Help</span>
+                </button>
 
-            {/* 3. Organ */}
-            <button
-              onClick={() => {
-                setViewMode('dashboard');
-                setActiveTab('requests');
-                setActiveSubFocus('organ');
-              }}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'organ'
-                ? 'bg-cobalt text-white shadow-sm font-semibold'
-                : 'text-bone-300 hover:text-bone-100'
-                }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-vermilion mr-0.5" />
-              <span>Organ</span>
-            </button>
+                <button
+                  onClick={() => handleNavClick('user_inquiries')}
+                  className={`flex items-center space-x-1 px-3 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'user_inquiries'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-sage" />
+                  <span>Direct Inquiries</span>
+                </button>
+              </>
+            ) : isMedicalStaff ? (
+              /* B. MEDICAL STAFF INTERFACE */
+              <>
+                <button
+                  onClick={() => handleNavClick(undefined, 'landing')}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'landing'
+                      ? 'bg-bottle-700 text-bone-100 shadow-sm border border-bottle-600 font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Home className="w-3.5 h-3.5" />
+                  <span>Overview</span>
+                </button>
 
-            {/* 4. Blood */}
-            <button
-              onClick={() => {
-                setViewMode('dashboard');
-                setActiveTab('requests');
-                setActiveSubFocus('blood');
-              }}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'blood'
-                ? 'bg-cobalt text-white shadow-sm font-semibold'
-                : 'text-bone-300 hover:text-bone-100'
-                }`}
-            >
-              <Droplet className="w-3.5 h-3.5 text-cobalt" />
-              <span>Blood</span>
-            </button>
+                <button
+                  onClick={() => {
+                    handleNavClick('requests');
+                    setActiveSubFocus('all');
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'all'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <ClipboardList className="w-3.5 h-3.5" />
+                  <span>Responds &amp; Requests</span>
+                </button>
 
-            {/* 5. Medicines */}
-            <button
-              onClick={() => {
-                setViewMode('dashboard');
-                setActiveTab('medicine');
-                setActiveSubFocus('medicine');
-              }}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${viewMode === 'dashboard' && activeTab === 'medicine'
-                ? 'bg-cobalt text-white shadow-sm font-semibold'
-                : 'text-bone-300 hover:text-bone-100'
-                }`}
-            >
-              <Pill className="w-3.5 h-3.5 text-sage" />
-              <span>Medicines</span>
-            </button>
+                <button
+                  onClick={() => {
+                    handleNavClick('requests');
+                    setActiveSubFocus('organ');
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'organ'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Heart className="w-3.5 h-3.5 text-vermilion" />
+                  <span>Organ</span>
+                </button>
 
-            {/* 6. Command Center */}
-            <button
-              onClick={() => {
-                setViewMode('dashboard');
-                setActiveTab('corridors');
-                setActiveSubFocus('all');
-              }}
-              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${viewMode === 'dashboard' && activeTab === 'corridors'
-                ? 'bg-cobalt text-white shadow-sm'
-                : 'text-bone-300 hover:text-bone-100'
-                }`}
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>Command Center</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-sage animate-ping-slow ml-0.5" />
-            </button>
+                <button
+                  onClick={() => {
+                    handleNavClick('requests');
+                    setActiveSubFocus('blood');
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'blood'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Droplet className="w-3.5 h-3.5 text-cobalt" />
+                  <span>Blood</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleNavClick('medicine');
+                    setActiveSubFocus('medicine');
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'medicine'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Pill className="w-3.5 h-3.5 text-sage" />
+                  <span>Medicines &amp; Test-Kit</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavClick('medical_reports')}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'medical_reports'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5 text-sage" />
+                  <span>Medical Files &amp; Tests</span>
+                </button>
+
+                {/* Command Center for Medical Staff (with Map excluded per Rule 1.2a) */}
+                <button
+                  onClick={() => {
+                    handleNavClick('corridors');
+                    setActiveSubFocus('all');
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'corridors'
+                      ? 'bg-cobalt text-white shadow-sm'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                  title="Medical Staff Operations Console (Map and Origin Location Restricted per Rule 1.2a)"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span>Command Center (ETA Tracking)</span>
+                </button>
+              </>
+            ) : (
+              /* C & D. GOVERNMENT EMPLOYEE & PULSELINK OPS (FULL ACCESS) */
+              <>
+                <button
+                  onClick={() => handleNavClick(undefined, 'landing')}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'landing'
+                      ? 'bg-bottle-700 text-bone-100 shadow-sm border border-bottle-600 font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Home className="w-3.5 h-3.5" />
+                  <span>Overview</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleNavClick('corridors');
+                    setActiveSubFocus('all');
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'corridors'
+                      ? 'bg-cobalt text-white shadow-sm'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span>Command Center (Map)</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-sage animate-ping-slow ml-0.5" />
+                </button>
+
+                {canViewRequestsPanel && (
+                  <button
+                    onClick={() => {
+                      handleNavClick('requests');
+                      setActiveSubFocus('all');
+                    }}
+                    className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                      viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'all'
+                        ? 'bg-cobalt text-white shadow-sm font-semibold'
+                        : 'text-bone-300 hover:text-bone-100'
+                    }`}
+                  >
+                    <ClipboardList className="w-3.5 h-3.5" />
+                    <span>Requests Panel</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    handleNavClick('requests');
+                    setActiveSubFocus('organ');
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'organ'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Heart className="w-3.5 h-3.5 text-vermilion" />
+                  <span>Organ</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleNavClick('requests');
+                    setActiveSubFocus('blood');
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'requests' && activeSubFocus === 'blood'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Droplet className="w-3.5 h-3.5 text-cobalt" />
+                  <span>Blood</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleNavClick('medicine');
+                    setActiveSubFocus('medicine');
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'medicine'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Pill className="w-3.5 h-3.5 text-sage" />
+                  <span>Medicines</span>
+                </button>
+
+                {/* Section 2C Government Registries & Allocation Console */}
+                <button
+                  onClick={() => handleNavClick('hospital_registry')}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'hospital_registry'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Building className="w-3.5 h-3.5 text-bone-300" />
+                  <span>Hospital Registry</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavClick('patient_registry')}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'patient_registry'
+                      ? 'bg-cobalt text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5 text-sage" />
+                  <span>Patient Registry</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavClick('allocation_console')}
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                    viewMode === 'dashboard' && activeTab === 'allocation_console'
+                      ? 'bg-vermilion text-white shadow-sm font-semibold'
+                      : 'text-bone-300 hover:text-bone-100'
+                  }`}
+                >
+                  <CheckSquare className="w-3.5 h-3.5 text-bone-100" />
+                  <span>Allocation &amp; Deallocation</span>
+                </button>
+              </>
+            )}
           </nav>
 
           {/* Right Action Tools: 6) IST Clock on left of profile + 3) Small Profile Option in Far Right Corner */}
           <div className="flex items-center space-x-2 shrink-0">
 
-            {/* Live Clock IST (placed adjacently to the left of the profile option) */}
+            {/* Live Clock IST */}
             <div className="flex items-center space-x-1.5 text-xs font-mono text-bone-300 bg-bottle-950/70 px-2 py-1 rounded-lg border border-bottle-700/60 whitespace-nowrap shadow-sm">
               <Clock className="w-3.5 h-3.5 text-sage" />
               <span>{currentTimeString || '23:42:00 IST'}</span>
             </div>
 
-            {/* Audio Toggle Button - Functional Sound Cue Controller */}
+            {/* Audio Toggle Button */}
             <button
               onClick={toggleAudioMute}
               title={audioMuted ? "Unmute Command Audio Telemetry" : "Mute Command Audio Telemetry"}
@@ -343,6 +560,9 @@ export const Navbar: React.FC = () => {
                       </div>
                     </div>
                     <p className="text-[10px] text-bone-400 font-mono mt-1.5 truncate">{currentUser.institution}</p>
+                    <p className="text-[10px] text-sage font-mono mt-0.5 capitalize">
+                      Gate Status: {isGateApproved ? 'Cleared & Authenticated' : 'Intake Pending'}
+                    </p>
                   </div>
 
                   <div className="px-3.5 py-1.5 border-b border-bottle-700/60">

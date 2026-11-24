@@ -12,11 +12,14 @@ import {
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
-  const { setViewMode, setActiveTab, selectedCity } = usePulseLink();
+  const { setViewMode, setActiveTab, selectedCity, guardNavigation } = usePulseLink();
 
-  const handleLaunchCommandCenter = (tab?: 'corridors' | 'requests' | 'medicine' | 'fairroute' | 'audit') => {
-    if (tab) setActiveTab(tab);
-    setViewMode('dashboard');
+  const handleLaunchCommandCenter = (tab?: any) => {
+    const permitted = guardNavigation(tab, 'dashboard');
+    if (permitted) {
+      if (tab) setActiveTab(tab);
+      setViewMode('dashboard');
+    }
   };
 
   return (

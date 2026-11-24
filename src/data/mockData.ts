@@ -9,7 +9,10 @@ import type {
   FairRouteCandidate, 
   ClearChainBlock,
   UserProfile,
-  CityConfig
+  CityConfig,
+  HospitalRegistryItem,
+  PatientRegistryItem,
+  AllocationConsoleItem
 } from '../types';
 
 export const SUPPORTED_CITIES: CityConfig[] = [
@@ -370,7 +373,33 @@ export const INITIAL_ORGANS: OrganViabilityItem[] = [
     ischemiaTimeElapsedMinutes: 188,
     assignedVehicleId: 'KA-05-EM-9901',
     estimatedArrivalMinutes: 19,
-    allocatedReason: 'Primary recipient with urgent status 1A; MELD-cardio 36, matched 6/6 HLA compatibility, transit window strictly feasible with Green Corridor.'
+    allocatedReason: 'Primary recipient with urgent status 1A; MELD-cardio 36, matched 6/6 HLA compatibility, transit window strictly feasible with Green Corridor.',
+
+    // Section 3 additions
+    timeOfDeath: '2026-11-25 00:45 IST',
+    timeOfDeathCountdownSec: 3120,
+    medicalReports: {
+      hlaTyping: 'HLA-A*02:01, HLA-B*44:02, HLA-DRB1*04:01 (6/6 Perfect Match)',
+      crossMatch: 'T-Cell & B-Cell Complement-Dependent Cytotoxicity (CDC) Negative (<5%)',
+      serology: 'HIV-1/2 Non-Reactive, HBsAg Negative, HCV Ab Negative, CMV IgG Pos/IgM Neg',
+      ischemicTolerance: 'Max static cold ischemic tolerance: 4.0h. Warm ischemia time at retrieval: 8 mins.',
+      clinicalMetrics: 'LVEF: 62%, PaO2/FiO2: 440 mmHg, Troponin-I: 0.02 ng/mL (Normal myocardial function)'
+    },
+    organCondition: {
+      preservationStatus: 'Celsior Solution Cold Storage with Micro-Oxygenated Transit Box #04',
+      viabilityScorePercent: 96,
+      perfusionMethod: 'Hypothermic Oxygenated Perfusion (HOPE) Transit Pod',
+      biopsyAssessment: 'Grade 0: Zero interstitial edema, intact sarcolemma morphology, excellent contractility'
+    },
+    matchStatus: 'Matched',
+    matchReasoning: 'Top cadaveric priority on NOTTO Karnataka list (Status 1A). Cross-match negative with 6/6 HLA compatibility and zero donor-specific anti-HLA antibodies.',
+    governmentRegistrations: {
+      nottoId: 'NOTTO-KA-HRT-2026-8819',
+      sottoClearance: 'SOTTO/KA/ALLOC/VALID/9912',
+      thotaForms: ['Form 1 (Brain Stem Death Declaration)', 'Form 8 (Organ Retrieval Authorization)', 'Form 10 (Transplant Handover)'],
+      registrationStatus: 'Approved',
+      contactOfficer: 'Dr. Suresh Babu, SOTTO Nodal Transplant Officer'
+    }
   },
   {
     id: 'organ-02',
@@ -387,7 +416,33 @@ export const INITIAL_ORGANS: OrganViabilityItem[] = [
     ischemiaTimeElapsedMinutes: 384,
     assignedVehicleId: 'KA-04-EM-7119',
     estimatedArrivalMinutes: 32,
-    allocatedReason: 'Decompensated cirrhosis (MELD score 34), zero donor anti-HLA antibodies.'
+    allocatedReason: 'Decompensated cirrhosis (MELD score 34), zero donor anti-HLA antibodies.',
+
+    // Section 3 additions
+    timeOfDeath: '2026-11-24 22:30 IST',
+    timeOfDeathCountdownSec: 12940,
+    medicalReports: {
+      hlaTyping: 'HLA-A*01:01, HLA-B*08:01, HLA-DRB1*03:01 (5/6 Compatible Match)',
+      crossMatch: 'Flow Cytometry Cross-Match (FCXM) Negative (B & T cell median channel shift < 20)',
+      serology: 'HBsAg Negative, HCV Negative, Syphilis Non-Reactive, HIV Negative',
+      ischemicTolerance: 'Cold Ischemia tolerance: 10.0h. Warm retrieval ischemia: 14 mins.',
+      clinicalMetrics: 'Total Bilirubin: 0.8 mg/dL, ALT: 28 IU/L, AST: 32 IU/L, Peak Lactate during perfusion: 1.4 mmol/L'
+    },
+    organCondition: {
+      preservationStatus: 'University of Wisconsin (UW) Perfusion Solution at 4°C',
+      viabilityScorePercent: 91,
+      perfusionMethod: 'Machine Perfusion Pre-Flush Standard Protocol',
+      biopsyAssessment: 'Grade 1: Minimal microvesicular steatosis (<5%), zero portal inflammation'
+    },
+    matchStatus: 'Matched',
+    matchReasoning: 'Statutory allocation per MELD priority algorithm. Donor liver volume meets graft-to-recipient weight ratio (GRWR 1.12%).',
+    governmentRegistrations: {
+      nottoId: 'NOTTO-KA-LVR-2026-4402',
+      sottoClearance: 'SOTTO/KA/ALLOC/VALID/8834',
+      thotaForms: ['Form 1 (Brain Stem Death Declaration)', 'Form 8 (Organ Retrieval Clearance)'],
+      registrationStatus: 'Approved',
+      contactOfficer: 'Dr. Geetha Murthy, State Organ Sharing Registry'
+    }
   },
   {
     id: 'organ-03',
@@ -404,7 +459,33 @@ export const INITIAL_ORGANS: OrganViabilityItem[] = [
     ischemiaTimeElapsedMinutes: 625,
     assignedVehicleId: 'KA-01-TC-3012',
     estimatedArrivalMinutes: 45,
-    allocatedReason: 'Pediatric mother waiting 3.8 years on state cadaver roster; perfect crossmatch.'
+    allocatedReason: 'Pediatric mother waiting 3.8 years on state cadaver roster; perfect crossmatch.',
+
+    // Section 3 additions
+    timeOfDeath: '2026-11-24 19:15 IST',
+    timeOfDeathCountdownSec: 48900,
+    medicalReports: {
+      hlaTyping: 'HLA-A*03:01, HLA-B*07:02, HLA-DRB1*15:01 (High Stringency Match)',
+      crossMatch: 'Luminex Single Antigen Bead Assay: Zero DSA detected (<500 MFI)',
+      serology: 'HBV Surface Antigen Non-Reactive, HCV Ab Negative, HIV Negative',
+      ischemicTolerance: 'Extended cold storage window: 24.0h. High resilience under pulsatile perfusion.',
+      clinicalMetrics: 'Donor Serum Creatinine: 0.9 mg/dL, Glomerular Filtration Rate: 98 mL/min'
+    },
+    organCondition: {
+      preservationStatus: 'Hypothermic Pulsatile Machine Perfusion (LifePort)',
+      viabilityScorePercent: 94,
+      perfusionMethod: 'Pulsatile Renal Perfusion at 30 mmHg Resistance',
+      biopsyAssessment: 'Remuzzi Score 1/12: Completely pristine glomeruli, zero interstitial fibrosis'
+    },
+    matchStatus: 'Matched',
+    matchReasoning: 'Longest waitlist seniority in ABO A+ tier (1,380 days). Excellent functional perfusion dynamics.',
+    governmentRegistrations: {
+      nottoId: 'NOTTO-KA-KID-2026-1194',
+      sottoClearance: 'SOTTO/KA/ALLOC/VALID/7701',
+      thotaForms: ['Form 1 (Brain Stem Death)', 'Form 8 (Statutory Authorization)', 'Form 11 (Recipient Acknowledgment)'],
+      registrationStatus: 'Approved',
+      contactOfficer: 'Dr. Suresh Babu, SOTTO Nodal Transplant Officer'
+    }
   }
 ];
 
@@ -491,7 +572,25 @@ export const INITIAL_BLOOD_REQUESTS: BloodRequestItem[] = [
     matchedBank: 'Rashtrotthana Blood Centre',
     assignedVehicleId: 'KA-04-TR-4102',
     timestamp: '23:18 IST',
-    etaMinutes: 11
+    etaMinutes: 11,
+
+    // Section 5 additions
+    bloodGroupCheck: {
+      donorGroup: 'O-',
+      compatibleRecipients: ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+ (Universal Donor)'],
+      rhFactor: 'Negative',
+      crossMatchResult: 'COMPATIBLE'
+    },
+    bloodConditionAndQuality: {
+      storageCondition: '2.0°C to 6.0°C Continuous Monitored CPDA-1 Storage',
+      screeningCertified: true,
+      screeningDetails: 'HIV-1/2, HBsAg, HCV-Ab, Syphilis/VDRL, Malaria Non-Reactive (NABL Certified)',
+      qualityStatus: 'Pristine',
+      hematocritPercent: 62,
+      hemolysisPercent: 0.3
+    },
+    quantityNeeded: 4,
+    urgencyLevel: 'Critical (OT Immediate)'
   },
   {
     id: 'req-b-102',
@@ -504,7 +603,25 @@ export const INITIAL_BLOOD_REQUESTS: BloodRequestItem[] = [
     matchedBank: 'Rashtrotthana Blood Centre',
     assignedVehicleId: 'KA-05-EM-9901',
     timestamp: '23:25 IST',
-    etaMinutes: 18
+    etaMinutes: 18,
+
+    // Section 5 additions
+    bloodGroupCheck: {
+      donorGroup: 'AB-',
+      compatibleRecipients: ['AB-', 'AB+'],
+      rhFactor: 'Negative',
+      crossMatchResult: 'COMPATIBLE'
+    },
+    bloodConditionAndQuality: {
+      storageCondition: '2.0°C to 6.0°C Monitored Refrigeration with IoT Temp Sensor',
+      screeningCertified: true,
+      screeningDetails: 'HIV Non-Reactive, Hepatitis B/C Clean, NAT Tested Certified',
+      qualityStatus: 'Pristine',
+      hematocritPercent: 58,
+      hemolysisPercent: 0.2
+    },
+    quantityNeeded: 2,
+    urgencyLevel: 'Critical (OT Immediate)'
   },
   {
     id: 'req-b-103',
@@ -517,7 +634,25 @@ export const INITIAL_BLOOD_REQUESTS: BloodRequestItem[] = [
     matchedBank: 'Narayana Health City Blood Bank',
     assignedVehicleId: 'KA-02-TC-8820',
     timestamp: '23:05 IST',
-    etaMinutes: 24
+    etaMinutes: 24,
+
+    // Section 5 additions
+    bloodGroupCheck: {
+      donorGroup: 'B+',
+      compatibleRecipients: ['B+', 'AB+'],
+      rhFactor: 'Positive',
+      crossMatchResult: 'COMPATIBLE'
+    },
+    bloodConditionAndQuality: {
+      storageCondition: '3.4°C Cold-Chain Express Transit Box #02',
+      screeningCertified: true,
+      screeningDetails: 'Complete 5-Point Mandatory Serological Clearance Verified',
+      qualityStatus: 'Acceptable',
+      hematocritPercent: 60,
+      hemolysisPercent: 0.4
+    },
+    quantityNeeded: 3,
+    urgencyLevel: 'Urgent (<2 hrs)'
   }
 ];
 
@@ -534,11 +669,44 @@ export const INITIAL_MEDICINES: MedicineBatch[] = [
     depotLocation: 'TrustCare Central Depot, Peenya',
     storageRequirement: '2°C to 8°C (Cold-Chain Required)',
     standardMrpInr: 4450,
-    subsidizedPriceInr: 1280, // Significant savings under PulseLink subsidy
+    subsidizedPriceInr: 1280,
     labCertificateHash: 'sha256:d48e89f2a4c871b9e02319fbc7412e09bb31980327f2f7aa',
     verificationStatus: 'VALID',
     quarantineState: false,
-    tamperSealIntact: true
+    tamperSealIntact: true,
+
+    // Section 4 additions
+    internalBarcodeSequence: 'GS1-DATAMATRIX:010890123456789021PL90421728022810BSV26',
+    decodedPayload: {
+      gtin: '08901234567890',
+      batchNo: 'BSV-2026-9042',
+      serialNo: 'SN-KA-441092',
+      verificationHash: '0x992fa1d08bc3e412a89df44'
+    },
+    testKitDirections: {
+      steps: [
+        'Step 1: Draw 0.2 ml sample using sterile pipette and add into Test Tube A (Buffered Saline).',
+        'Step 2: Insert PulseLink Protein Reaction Strip; gently agitate for 5 seconds.',
+        'Step 3: Allow colorimetric reaction to incubate undisturbed for 30 seconds at 20°C-25°C.',
+        'Step 4: Compare color band against the CDSCO verified reference card (Violet = Valid, Amber = Compromised).'
+      ],
+      colorBandCheck: 'Deep Violet (#6D28D9) confirms >19.5% pure human albumin fraction without denaturation.',
+      observationWindowSeconds: 30,
+      reagentSolutionName: 'PulseLink Albumin Verification Buffer Type-1'
+    },
+    requestOrigin: {
+      facilityName: 'Victoria Hospital & BMCRI',
+      department: 'Trauma ICU & Burn Unit',
+      locationCity: 'Bengaluru Central',
+      timestamp: '2026-11-25 01:25 IST'
+    },
+    requestedItem: {
+      name: 'Human Albumin 20% Infusion',
+      dosageForm: 'IV Infusion Glass Bottle',
+      strength: '20g / 100ml (20%)',
+      quantityUnits: 25,
+      clinicalUrgency: 'CRITICAL_ICU'
+    }
   },
   {
     batchId: 'PL-VAC-2025-1108',
@@ -546,7 +714,7 @@ export const INITIAL_MEDICINES: MedicineBatch[] = [
     dosageForm: 'Injectable Solution',
     manufacturer: 'Serum Institute of India Pvt Ltd',
     manufacturingDate: '2024-11-01',
-    expiryDate: '2026-10-31', // Already expired!
+    expiryDate: '2026-10-31',
     cdscoLicenseNo: 'CDSCO/VAC/MH/3199/2024',
     currentStockUnits: 85,
     depotLocation: 'Nelamangala Taluk Hospital Pharmacy',
@@ -556,7 +724,40 @@ export const INITIAL_MEDICINES: MedicineBatch[] = [
     labCertificateHash: 'sha256:8890ab221c97a8120349bca74e921d743a19b8449021da33',
     verificationStatus: 'EXPIRED',
     quarantineState: true,
-    tamperSealIntact: true
+    tamperSealIntact: true,
+
+    // Section 4 additions
+    internalBarcodeSequence: 'GS1-DATAMATRIX:010890111222333421PL11081726103110SERUM25',
+    decodedPayload: {
+      gtin: '08901112223334',
+      batchNo: 'SII-2025-1108',
+      serialNo: 'SN-MH-991204',
+      verificationHash: '0x11ab4889efc3409'
+    },
+    testKitDirections: {
+      steps: [
+        'Step 1: Check physical vial clarity under white light; verify absence of flocculation.',
+        'Step 2: Add 1 drop to Lyophilized Immuno-Test Well B.',
+        'Step 3: Read result band within 45 seconds.',
+        'Step 4: Red line over expiration control confirms quarantine status.'
+      ],
+      colorBandCheck: 'Flagged: Expiration marker active. Automatic quarantine protocol engaged.',
+      observationWindowSeconds: 45,
+      reagentSolutionName: 'PulseLink Immunoglobulin Titration Reagent'
+    },
+    requestOrigin: {
+      facilityName: 'Nelamangala Taluk General Hospital',
+      department: 'Emergency Animal Bite Clinic',
+      locationCity: 'Bengaluru Rural',
+      timestamp: '2026-11-25 00:50 IST'
+    },
+    requestedItem: {
+      name: 'Anti-Rabies Immunoglobulin 1000 IU',
+      dosageForm: 'Vial with Sterile Diluent',
+      strength: '1000 IU / 5ml',
+      quantityUnits: 15,
+      clinicalUrgency: 'HIGH_PRIORITY'
+    }
   },
   {
     batchId: 'PL-ANT-2026-3391',
@@ -580,6 +781,39 @@ export const INITIAL_MEDICINES: MedicineBatch[] = [
       toClinic: 'Anekal CHC (High viper snakebite prevalence)',
       daysUntilExpiry: 45,
       reason: 'Prevent expiration wastage; Anekal records 8 bites/week vs Victoria 1 bite/month.'
+    },
+
+    // Section 4 additions
+    internalBarcodeSequence: 'GS1-DATAMATRIX:010890999888777621PL33911728123110HAF26',
+    decodedPayload: {
+      gtin: '08909998887776',
+      batchNo: 'HAF-2026-3391',
+      serialNo: 'SN-KA-118822',
+      verificationHash: '0x44cd88219ffbb01'
+    },
+    testKitDirections: {
+      steps: [
+        'Step 1: Reconstitute vial with 10ml sterile water for injection.',
+        'Step 2: Apply 10 microliters onto the Venom Neutralization Test Card.',
+        'Step 3: Observe antibody binding control line at 60 seconds.',
+        'Step 4: Dual lines confirm authentic polyvalent neutralizing potency (Cobra, Krait, Russell Viper, Saw-Scaled Viper).'
+      ],
+      colorBandCheck: 'Dual Violet Bands (Test + Control) confirm 100% active polyvalent venom neutralizer.',
+      observationWindowSeconds: 60,
+      reagentSolutionName: 'PulseLink Venom Potency Neutralization Test Kit'
+    },
+    requestOrigin: {
+      facilityName: 'Anekal Community Health Centre (CHC)',
+      department: 'Rural Anti-Venom Emergency Unit',
+      locationCity: 'Bengaluru South Fringe',
+      timestamp: '2026-11-25 01:10 IST'
+    },
+    requestedItem: {
+      name: 'Polyvalent Anti-Snake Venom Serum',
+      dosageForm: 'Lyophilized Powder + Diluent',
+      strength: 'Neutralizes 0.6mg Cobra / 0.45mg Russell Viper',
+      quantityUnits: 40,
+      clinicalUrgency: 'CRITICAL_ICU'
     }
   },
   {
@@ -604,7 +838,198 @@ export const INITIAL_MEDICINES: MedicineBatch[] = [
       toClinic: 'Nelamangala Taluk Hospital',
       daysUntilExpiry: 58,
       reason: 'Rebalance surplus diabetic stock to suburban center facing insulin deficit.'
+    },
+
+    // Section 4 additions
+    internalBarcodeSequence: 'GS1-DATAMATRIX:010890555444333221PL55101727113010BIOCON26',
+    decodedPayload: {
+      gtin: '08905554443332',
+      batchNo: 'BIO-2026-5510',
+      serialNo: 'SN-KA-772911',
+      verificationHash: '0x88ee2109bac3301'
+    },
+    testKitDirections: {
+      steps: [
+        'Step 1: Confirm cold storage temperature log has remained between 2.0°C and 8.0°C.',
+        'Step 2: Inspect solution clarity for any crystal formation.',
+        'Step 3: Sample 0.1 ml with PulseLink Glargine Solubility pH Strips.',
+        'Step 4: Verify acidic clear formulation (pH 4.0 ± 0.2) ensuring delayed subcutaneous release.'
+      ],
+      colorBandCheck: 'Verified pH 4.0 clear band matches Biocon genuine biosimilar standard.',
+      observationWindowSeconds: 15,
+      reagentSolutionName: 'PulseLink Insulin Cold-Chain Integrity Test Kit'
+    },
+    requestOrigin: {
+      facilityName: 'Manipal Hospital (HAL Old Airport)',
+      department: 'Inpatient Endocrinology Pharmacy',
+      locationCity: 'Bengaluru East',
+      timestamp: '2026-11-24 23:40 IST'
+    },
+    requestedItem: {
+      name: 'Insulin Glargine 100 IU/ml',
+      dosageForm: 'Pen Cartridges (3ml)',
+      strength: '100 IU / ml',
+      quantityUnits: 50,
+      clinicalUrgency: 'ROUTINE_STOCK'
     }
+  }
+];
+
+// Section 2C: Government Registries & Allocation Console Data
+export const HOSPITAL_REGISTRY: HospitalRegistryItem[] = [
+  {
+    id: 'reg-hosp-01',
+    name: 'Manipal Hospital (HAL Old Airport Road)',
+    licenseNumber: 'KA-DHS-NOTTO-0492',
+    accreditation: 'NABH_LEVEL_3',
+    city: 'Bengaluru',
+    activeTransplantBeds: 18,
+    nodalOfficer: 'Dr. Ananya Rao, M.S. (Lead Coordinator)',
+    contact: '+91 80 2502 4444',
+    status: 'VERIFIED'
+  },
+  {
+    id: 'reg-hosp-02',
+    name: 'Narayana Health City (Bommasandra)',
+    licenseNumber: 'KA-DHS-NOTTO-0182',
+    accreditation: 'GOVT_APEX',
+    city: 'Bengaluru',
+    activeTransplantBeds: 24,
+    nodalOfficer: 'Dr. C. Shanthi, M.Ch (Cardiothoracic Nodal)',
+    contact: '+91 80 7122 2222',
+    status: 'VERIFIED'
+  },
+  {
+    id: 'reg-hosp-03',
+    name: 'Victoria Hospital & BMCRI',
+    licenseNumber: 'KA-GOVT-BMCRI-0012',
+    accreditation: 'GOVT_APEX',
+    city: 'Bengaluru',
+    activeTransplantBeds: 32,
+    nodalOfficer: 'Prof. B. Ramesh, M.S., FRCS',
+    contact: '+91 80 2670 1150',
+    status: 'VERIFIED'
+  },
+  {
+    id: 'reg-hosp-04',
+    name: 'Apollo Hospitals Bannerghatta',
+    licenseNumber: 'KA-DHS-NOTTO-0771',
+    accreditation: 'NABH_LEVEL_3',
+    city: 'Bengaluru',
+    activeTransplantBeds: 14,
+    nodalOfficer: 'Dr. Mahesh Gopalan, M.D.',
+    contact: '+91 80 2630 4050',
+    status: 'VERIFIED'
+  }
+];
+
+export const PATIENT_REGISTRY: PatientRegistryItem[] = [
+  {
+    id: 'pat-reg-01',
+    patientInitials: 'S. Kulkarni',
+    age: 48,
+    gender: 'M',
+    bloodGroup: 'B+',
+    organNeeded: 'Heart',
+    meldScore: 36,
+    urgencyTier: 'STATUS_1A_CRITICAL',
+    registeredDate: '2025-08-14',
+    hospital: 'Manipal Hospital (HAL Old Airport)',
+    allocationStatus: 'ALLOCATED'
+  },
+  {
+    id: 'pat-reg-02',
+    patientInitials: 'R. Varma',
+    age: 53,
+    gender: 'M',
+    bloodGroup: 'O+',
+    organNeeded: 'Liver',
+    meldScore: 34,
+    urgencyTier: 'STATUS_1B_URGENT',
+    registeredDate: '2025-11-02',
+    hospital: 'Apollo Hospitals Bannerghatta',
+    allocationStatus: 'ALLOCATED'
+  },
+  {
+    id: 'pat-reg-03',
+    patientInitials: 'G. Gowda',
+    age: 36,
+    gender: 'F',
+    bloodGroup: 'A+',
+    organNeeded: 'Kidney',
+    meldScore: 28,
+    urgencyTier: 'STATUS_2_WAITLIST',
+    registeredDate: '2023-01-20',
+    hospital: 'Victoria Hospital & BMCRI',
+    allocationStatus: 'ALLOCATED'
+  },
+  {
+    id: 'pat-reg-04',
+    patientInitials: 'A. Joseph',
+    age: 41,
+    gender: 'M',
+    bloodGroup: 'O-',
+    organNeeded: 'Heart',
+    meldScore: 33,
+    urgencyTier: 'STATUS_1B_URGENT',
+    registeredDate: '2025-09-18',
+    hospital: 'Narayana Health City',
+    allocationStatus: 'WAITLISTED'
+  },
+  {
+    id: 'pat-reg-05',
+    patientInitials: 'P. Venkat',
+    age: 62,
+    gender: 'M',
+    bloodGroup: 'B+',
+    organNeeded: 'Kidney',
+    meldScore: 19,
+    urgencyTier: 'STATUS_2_WAITLIST',
+    registeredDate: '2024-04-12',
+    hospital: 'Victoria Hospital & BMCRI',
+    allocationStatus: 'WAITLISTED'
+  }
+];
+
+export const INITIAL_ALLOCATIONS: AllocationConsoleItem[] = [
+  {
+    id: 'alloc-01',
+    patientId: 'pat-reg-01',
+    patientInitials: 'S. Kulkarni (48M)',
+    hospital: 'Manipal Hospital (HAL Old Airport)',
+    organ: 'Heart',
+    organId: 'organ-01',
+    suggestedAction: 'ALLOCATE',
+    clinicalReasoning: 'Top recipient on NOTTO Karnataka Status 1A list. HLA 6/6 complete antigen match, zero donor-specific anti-HLA antibodies, cross-match negative. Green Corridor ETA (19 min) is well within 4.0h cold ischemia threshold.',
+    medicalReportsSummary: 'LVEF 18% end-stage DCM, PA catheter on dual inotropes. Donor heart echo: LVEF 62%, PaO2 440 mmHg, Troponin nominal.',
+    officerApprovalStatus: 'APPROVED',
+    timestamp: '2026-11-25 01:05 IST'
+  },
+  {
+    id: 'alloc-02',
+    patientId: 'pat-reg-02',
+    patientInitials: 'R. Varma (53M)',
+    hospital: 'Apollo Hospitals Bannerghatta',
+    organ: 'Liver',
+    organId: 'organ-02',
+    suggestedAction: 'ALLOCATE',
+    clinicalReasoning: 'MELD score 34 with refractory ascites and recurrent encephalopathy. Donor GRWR 1.12% with biopsy showing <5% microvesicular steatosis.',
+    medicalReportsSummary: 'Total Bilirubin 14.8 mg/dL, INR 2.4, Serum Creatinine 1.8 mg/dL. Donor LFT: Bilirubin 0.8, AST 32.',
+    officerApprovalStatus: 'APPROVED',
+    timestamp: '2026-11-25 00:40 IST'
+  },
+  {
+    id: 'alloc-03',
+    patientId: 'pat-reg-04',
+    patientInitials: 'A. Joseph (41M)',
+    hospital: 'Narayana Health City',
+    organ: 'Heart',
+    organId: 'organ-01',
+    suggestedAction: 'DEALLOCATE',
+    clinicalReasoning: 'Deallocation suggested: Patient serum anti-HLA Class I antibody screen tested positive (DSA MFI > 6,500 against donor HLA-B*44). High hyperacute rejection risk. Primary allocation to S. Kulkarni approved.',
+    medicalReportsSummary: 'DSA positive. Panel Reactive Antibodies (PRA) 82%. Urgent re-matching required.',
+    officerApprovalStatus: 'DEALLOCATED',
+    timestamp: '2026-11-25 00:55 IST'
   }
 ];
 

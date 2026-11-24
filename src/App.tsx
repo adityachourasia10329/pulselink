@@ -6,13 +6,13 @@ import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { VerificationGatePage } from './components/auth/VerificationGatePage';
 
 const AppContent: React.FC = () => {
-  const { viewMode } = usePulseLink();
+  const { viewMode, isGateApproved } = usePulseLink();
 
   return (
     <div className="min-h-screen bg-bottle-800 text-bone-100 flex flex-col font-sans selection:bg-vermilion selection:text-bone-50">
       <Navbar />
       <div className="flex-1">
-        {viewMode === 'login' ? (
+        {viewMode === 'login' || !isGateApproved ? (
           <VerificationGatePage />
         ) : viewMode === 'landing' ? (
           <LandingPage />
