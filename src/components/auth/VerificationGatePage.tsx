@@ -11,7 +11,9 @@ import {
   MapPin, 
   Phone,
   Bookmark,
-  Trash2
+  Trash2,
+  X,
+  Check
 } from 'lucide-react';
 
 export const VerificationGatePage: React.FC = () => {
@@ -42,6 +44,7 @@ export const VerificationGatePage: React.FC = () => {
         userCategory: 'medical_staff',
         purposeOfVisit: 'requesting',
         phoneWhatsapp: '',
+        isPulseLinkEmployee: false,
         verifiedAt: new Date().toISOString()
       }
     );
@@ -56,6 +59,10 @@ export const VerificationGatePage: React.FC = () => {
   const [city, setCity] = useState(initial.city || 'Bengaluru');
   const [userCategory, setUserCategory] = useState<UserCategory>(initial.userCategory || 'medical_staff');
   const [purposeOfVisit, setPurposeOfVisit] = useState<PurposeOfVisit>(initial.purposeOfVisit || 'requesting');
+  const [isPulseLinkEmployee, setIsPulseLinkEmployee] = useState<boolean | null>(
+    typeof initial.isPulseLinkEmployee === 'boolean' ? initial.isPulseLinkEmployee : null
+  );
+  const [showEmployeePrompt, setShowEmployeePrompt] = useState(false);
 
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
@@ -83,6 +90,7 @@ export const VerificationGatePage: React.FC = () => {
       phoneWhatsapp: phone,
       userCategory,
       purposeOfVisit,
+      isPulseLinkEmployee: isPulseLinkEmployee ?? false,
       verifiedAt: new Date().toISOString()
     };
     try {
@@ -90,7 +98,7 @@ export const VerificationGatePage: React.FC = () => {
     } catch {
       // ignore
     }
-  }, [fullName, email, workOrganisation, city, phone, userCategory, purposeOfVisit]);
+  }, [fullName, email, workOrganisation, city, phone, userCategory, purposeOfVisit, isPulseLinkEmployee]);
 
   const saveToDevicePresets = (profile: VerificationUserData) => {
     try {
@@ -115,6 +123,9 @@ export const VerificationGatePage: React.FC = () => {
     setCity(preset.city || 'Bengaluru');
     if (preset.userCategory) setUserCategory(preset.userCategory);
     if (preset.purposeOfVisit) setPurposeOfVisit(preset.purposeOfVisit);
+    if (typeof preset.isPulseLinkEmployee === 'boolean') {
+      setIsPulseLinkEmployee(preset.isPulseLinkEmployee);
+    }
   };
 
   const handleDeleteDevicePreset = (indexToDelete: number, e: React.MouseEvent) => {
@@ -128,16 +139,27 @@ export const VerificationGatePage: React.FC = () => {
     }
   };
 
+  const handleSelectCategory = (catId: UserCategory) => {
+    setUserCategory(catId);
+    if (catId === 'other') {
+      setShowEmployeePrompt(true);
+    } else {
+      setShowEmployeePrompt(false);
+      setIsPulseLinkEmployee(null);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const submissionData: VerificationUserData = {
       fullName: fullName.trim() || 'Guest User',
       email: email.trim() || 'contact@pulselink.in',
-      workOrganisation: workOrganisation.trim() || 'Independent / Hospital Network',
+      workOrganisation: workOrganisation.trim() || (isPulseLinkEmployee ? 'PulseLink Core Logistics' : 'Independent Network'),
       city: city.trim() || 'Bengaluru',
       userCategory,
       purposeOfVisit,
       phoneWhatsapp: phone.trim(),
+      isPulseLinkEmployee: isPulseLinkEmployee ?? false,
       verifiedAt: new Date().toISOString()
     };
 
@@ -152,8 +174,90 @@ export const VerificationGatePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[85vh] flex flex-col items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-[85vh] flex flex-col items-center justify-center py-8 px-4 sm:px-6 lg:px-8 relative">
       
+      {/* Floating Hover Box on top of the details page when 'Other' is selected */}
+      {showEmployeePrompt && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bottle-950/75 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setShowEmployeePrompt(false)}
+        >
+          <div 
+            className="relative w-full max-w-sm bg-bottle-900 border-2 border-cobalt rounded-2xl shadow-2xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowEmployeePrompt(false)}
+              className="absolute top-3 right-3 p-1 rounded-lg text-bone-400 hover:text-bone-100 hover:bg-bottle-800 transition-colors"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="inline-flex p-2 bg-white rounded-xl shadow-md border border-bone-300/40 mx-auto">
+              <img 
+                src="/pulselink-logo.jpg" 
+                alt="PulseLink Logo" 
+                className="h-8 w-auto object-contain" 
+              />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-bone-100 font-serif">
+                Are you a PulseLink employee?
+              </h3>
+              <p className="text-xs text-bone-300 font-sans">
+                Please confirm whether you are an authorized PulseLink internal team member.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPulseLinkEmployee(true);
+                  if (!workOrganisation || workOrganisation.trim() === '') {
+                    setWorkOrganisation('PulseLink Operations');
+                  }
+                  setShowEmployeePrompt(false);
+                }}
+                className={`flex-1 py-2.5 px-3 rounded-xl font-semibold text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 ${
+                  isPulseLinkEmployee === true
+                    ? 'bg-sage text-bottle-950'
+                    : 'bg-cobalt hover:bg-cobalt-dark text-white'
+                }`}
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Yes, I am</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPulseLinkEmployee(false);
+                  setShowEmployeePrompt(false);
+                }}
+                className={`flex-1 py-2.5 px-3 rounded-xl font-medium text-xs transition-all border flex items-center justify-center space-x-1.5 ${
+                  isPulseLinkEmployee === false
+                    ? 'bg-bottle-700 text-bone-100 border-bottle-500'
+                    : 'bg-bottle-950 hover:bg-bottle-800 border-bottle-700 text-bone-300 hover:text-bone-100'
+                }`}
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>No, external</span>
+              </button>
+            </div>
+
+            {isPulseLinkEmployee === true && (
+              <p className="text-[11px] font-mono text-sage bg-bottle-950/90 py-1 px-2.5 rounded-lg border border-sage/40">
+                PulseLink Staff Mode Activated
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-xl mx-auto space-y-6">
         
         {/* 1) NEW LOGO DISPLAY AT TOP (India map with tricolor, road ring with heart, and PulseLink brand) */}
@@ -217,14 +321,21 @@ export const VerificationGatePage: React.FC = () => {
                 { id: 'patient_family', label: "a) Patient or patient's family" },
                 { id: 'medical_staff', label: 'b) Medical staff' },
                 { id: 'gov_employee', label: 'c) Gov employee' },
-                { id: 'other', label: 'd) Other' }
+                { 
+                  id: 'other', 
+                  label: isPulseLinkEmployee === true 
+                    ? 'd) Other (PulseLink Employee)' 
+                    : isPulseLinkEmployee === false 
+                    ? 'd) Other (External)' 
+                    : 'd) Other' 
+                }
               ].map((opt) => {
                 const isSelected = userCategory === opt.id;
                 return (
                   <button
                     key={opt.id}
                     type="button"
-                    onClick={() => setUserCategory(opt.id as UserCategory)}
+                    onClick={() => handleSelectCategory(opt.id as UserCategory)}
                     className={`px-4 py-2 rounded-full text-xs transition-all ${
                       isSelected
                         ? 'bg-bone-50 text-bottle-950 font-bold shadow-md scale-[1.02]'

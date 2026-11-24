@@ -34,6 +34,7 @@ export interface VerificationUserData {
   userCategory: UserCategory;
   purposeOfVisit: PurposeOfVisit;
   phoneWhatsapp?: string;
+  isPulseLinkEmployee?: boolean;
   queryRequirements?: string;
   verifiedAt?: string;
 }
