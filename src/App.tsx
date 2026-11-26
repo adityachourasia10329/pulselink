@@ -15,7 +15,7 @@ const AppContent: React.FC = () => {
       
       {/* Main Container with Retractable Left Sidebar & Dynamic Layout Shift */}
       <div className="flex-1 flex overflow-hidden relative">
-        <Sidebar />
+        {isGateApproved && viewMode !== 'login' && <Sidebar />}
         <main className="flex-1 min-w-0 overflow-y-auto transition-all duration-300 ease-in-out">
           {viewMode === 'login' || !isGateApproved ? (
             <VerificationGatePage />

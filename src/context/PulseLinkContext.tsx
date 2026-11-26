@@ -599,21 +599,26 @@ export const PulseLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     ? telemetryData[telemetryData.length - 1].temperature
     : 4.2;
 
-  // Toggle Traffic Police Clearance
+  // Toggle Traffic Police Clearance (Once active, remains active until node delivery)
   const togglePoliceClearance = async (corridorId: string) => {
     const corr = corridors.find(c => c.id === corridorId);
     if (!corr) return;
 
-    const nextState = !corr.policeClearanceActive;
+    // Once active, police clearance remains locked active until destination delivery
+    if (corr.policeClearanceActive) {
+      return;
+    }
+
+    const nextState = true;
 
     setCorridors(prev => prev.map(c => {
       if (c.id === corridorId) {
         return {
           ...c,
           policeClearanceRequested: true,
-          policeClearanceActive: nextState,
-          status: nextState ? 'Clearance Active' : 'In Transit',
-          clearedIntersectionsCount: nextState ? c.totalIntersectionsCount : Math.max(1, c.totalIntersectionsCount - 3)
+          policeClearanceActive: true,
+          status: 'Clearance Active',
+          clearedIntersectionsCount: c.totalIntersectionsCount
         };
       }
       return c;

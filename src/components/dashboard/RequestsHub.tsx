@@ -25,7 +25,10 @@ export const RequestsHub: React.FC = () => {
     activeSubFocus,
     setActiveSubFocus,
     canViewOrganOriginLocation,
-    requestMedicalPersonnelHelp
+    requestMedicalPersonnelHelp,
+    isMedicalStaff,
+    isGovEmployee,
+    isPulseLinkEmployee
   } = usePulseLink();
 
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
@@ -294,13 +297,21 @@ export const RequestsHub: React.FC = () => {
                       <div>Forms: <strong className="text-bone-100">{item.governmentRegistrations.thotaForms.join(', ')}</strong></div>
                     </div>
 
-                    <button
-                      onClick={() => handleHelpClick(item.governmentRegistrations.thotaForms[0] || 'NOTTO Clearance', item.id)}
-                      className="w-full mt-1 py-2 px-3 rounded-lg bg-cobalt hover:bg-cobalt-dark text-white font-semibold text-xs transition-colors flex items-center justify-center space-x-1.5"
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>Take Help of Medical Personnel</span>
-                    </button>
+                    {/* Item 1: Blue icon as information/notice bar for medical personnel, button for others */}
+                    {isMedicalStaff ? (
+                      <div className="w-full mt-1 py-2 px-3 rounded-lg bg-cobalt/20 border border-cobalt/50 text-bone-100 font-semibold text-xs flex items-center justify-center space-x-1.5 select-none shadow-sm">
+                        <UserCheck className="w-3.5 h-3.5 text-cobalt" />
+                        <span>Medical Personnel Assigned &amp; Standing By</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleHelpClick(item.governmentRegistrations.thotaForms[0] || 'NOTTO Clearance', item.id)}
+                        className="w-full mt-1 py-2 px-3 rounded-lg bg-cobalt hover:bg-cobalt-dark text-white font-semibold text-xs transition-colors flex items-center justify-center space-x-1.5"
+                      >
+                        <UserCheck className="w-3.5 h-3.5" />
+                        <span>Take Help of Medical Personnel</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -509,14 +520,22 @@ export const RequestsHub: React.FC = () => {
                               </div>
                             )}
 
+                            {/* Item 2: Live Transfusion Pipeline - Medical staff can view, but only gov/pulselink emp can advance stage */}
                             {stage !== 'Handover Verified' && (
-                              <button
-                                onClick={() => advanceBloodRequestStatus(req.id)}
-                                className="w-full mt-1 py-1.5 px-2 bg-bottle-800 hover:bg-bottle-700 border border-bottle-600 rounded text-[10px] font-mono font-semibold text-bone-200 flex items-center justify-center space-x-1 transition-colors"
-                              >
-                                <span>Advance Stage</span>
-                                <ArrowRight className="w-3 h-3 text-sage" />
-                              </button>
+                              (isGovEmployee || isPulseLinkEmployee) ? (
+                                <button
+                                  onClick={() => advanceBloodRequestStatus(req.id)}
+                                  className="w-full mt-1 py-1.5 px-2 bg-bottle-800 hover:bg-bottle-700 border border-bottle-600 rounded text-[10px] font-mono font-semibold text-bone-200 flex items-center justify-center space-x-1 transition-colors"
+                                >
+                                  <span>Advance Stage</span>
+                                  <ArrowRight className="w-3 h-3 text-sage" />
+                                </button>
+                              ) : (
+                                <div className="w-full mt-1 py-1.5 px-2 bg-bottle-950/90 border border-bottle-800 rounded text-[10px] font-mono text-bone-300 flex items-center justify-center space-x-1 select-none">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" />
+                                  <span>Active In Pipeline (Read-Only)</span>
+                                </div>
+                              )
                             )}
 
                             {stage === 'Handover Verified' && (

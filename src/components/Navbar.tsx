@@ -30,14 +30,15 @@ export const Navbar: React.FC = () => {
     organTransfers,
     isExcursionActive,
     isGateApproved,
+    viewMode,
     setViewMode
   } = usePulseLink();
 
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
 
-  // Check if any organ is under 60 minutes
-  const urgentOrgan = organTransfers.find(o => o.remainingSeconds < 3600);
+  // Check if any organ is under 3 hours (10800 seconds)
+  const urgentOrgan = organTransfers.find(o => o.remainingSeconds < 10800);
 
   const handleLogoClick = () => {
     if (!isGateApproved) {
@@ -60,7 +61,7 @@ export const Navbar: React.FC = () => {
                 <span>CRITICAL DISPATCH ALERT:</span>
                 {urgentOrgan && (
                   <span>
-                    {urgentOrgan.organ.toUpperCase()} COLD ISCHEMIA WINDOW &lt; 60 MIN ({Math.floor(urgentOrgan.remainingSeconds / 60)}m {urgentOrgan.remainingSeconds % 60}s remaining) • Destination: {urgentOrgan.recipientHospital} • Preemption Code: RED-7
+                    {urgentOrgan.organ.toUpperCase()} COLD ISCHEMIA WINDOW &lt; 3 HRS ({Math.floor(urgentOrgan.remainingSeconds / 3600)}h {Math.floor((urgentOrgan.remainingSeconds % 3600) / 60)}m {urgentOrgan.remainingSeconds % 60}s remaining) • Destination: {urgentOrgan.recipientHospital} ({urgentOrgan.recipientHospital})
                   </span>
                 )}
                 {isExcursionActive && (
@@ -183,22 +184,24 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* Retractable Sidebar Toggle Button next to City Selector */}
-            <button
-              onClick={toggleSidebar}
-              title={isSidebarOpen ? "Collapse Navigation Sidebar" : "Open Navigation Sidebar"}
-              aria-label={isSidebarOpen ? "Collapse Navigation Sidebar" : "Open Navigation Sidebar"}
-              className="flex items-center space-x-1.5 text-xs font-mono px-2.5 py-1 bg-bottle-950/90 hover:bg-bottle-800 text-bone-200 hover:text-bone-100 rounded-lg border border-bottle-700 hover:border-cobalt transition-all shadow-sm group"
-            >
-              {isSidebarOpen ? (
-                <PanelLeftClose className="w-3.5 h-3.5 text-sage group-hover:scale-110 transition-transform" />
-              ) : (
-                <PanelLeftOpen className="w-3.5 h-3.5 text-sage group-hover:scale-110 transition-transform" />
-              )}
-              <span className="font-semibold hidden sm:inline text-[11px]">
-                {isSidebarOpen ? 'Hide Tabs' : 'Show Tabs'}
-              </span>
-            </button>
+            {/* Retractable Sidebar Toggle Button next to City Selector (Hidden on login page per Item 5) */}
+            {isGateApproved && viewMode !== 'login' && (
+              <button
+                onClick={toggleSidebar}
+                title={isSidebarOpen ? "Collapse Navigation Sidebar" : "Open Navigation Sidebar"}
+                aria-label={isSidebarOpen ? "Collapse Navigation Sidebar" : "Open Navigation Sidebar"}
+                className="flex items-center space-x-1.5 text-xs font-mono px-2.5 py-1 bg-bottle-950/90 hover:bg-bottle-800 text-bone-200 hover:text-bone-100 rounded-lg border border-bottle-700 hover:border-cobalt transition-all shadow-sm group"
+              >
+                {isSidebarOpen ? (
+                  <PanelLeftClose className="w-3.5 h-3.5 text-sage group-hover:scale-110 transition-transform" />
+                ) : (
+                  <PanelLeftOpen className="w-3.5 h-3.5 text-sage group-hover:scale-110 transition-transform" />
+                )}
+                <span className="font-semibold hidden sm:inline text-[11px]">
+                  {isSidebarOpen ? 'Hide Tabs' : 'Show Tabs'}
+                </span>
+              </button>
+            )}
           </div>
 
 

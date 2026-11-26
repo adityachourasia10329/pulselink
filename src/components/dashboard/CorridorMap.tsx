@@ -20,7 +20,8 @@ export const CorridorMap: React.FC = () => {
     currentTimeString,
     selectedCity,
     canViewMap,
-    canViewOrganOriginLocation
+    canViewOrganOriginLocation,
+    isMedicalStaff
   } = usePulseLink();
 
   const [selectedHospitalId, setSelectedHospitalId] = useState<string>('hosp_narayana');
@@ -60,11 +61,24 @@ export const CorridorMap: React.FC = () => {
           </h2>
         </div>
 
-        {/* Corridor Route Pills */}
+        {/* Corridor Route Pills — read-only info display for medical staff, interactive for gov/pulselink */}
         <div className="flex flex-wrap items-center gap-2">
           {corridors.map(corr => {
             const isSelected = corr.id === selectedCorridorId;
-            return (
+            return isMedicalStaff ? (
+              <div
+                key={corr.id}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-medium border ${
+                  isSelected 
+                    ? 'bg-bottle-700 border-vermilion text-bone-50 shadow-md ring-1 ring-vermilion/50' 
+                    : 'bg-bottle-950 border-bottle-700 text-bone-300'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${corr.policeClearanceActive ? 'bg-vermilion animate-ping-slow' : 'bg-sage'}`} />
+                <span className="font-mono font-semibold">{corr.code}</span>
+                <span className="text-bone-300 hidden sm:inline">({corr.cargoType})</span>
+              </div>
+            ) : (
               <button
                 key={corr.id}
                 onClick={() => setSelectedCorridorId(corr.id)}
@@ -194,21 +208,41 @@ export const CorridorMap: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Police Clearance Action Button */}
+                {/* Police Clearance — interactive button for gov/pulselink, read-only status bar for medical staff */}
                 <div className="pt-2 flex justify-end">
-                  <button
-                    onClick={() => togglePoliceClearance(activeCorridor.id)}
-                    className={`flex items-center space-x-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-xl ${
-                      activeCorridor.policeClearanceActive
-                        ? 'bg-vermilion text-bone-50 hover:bg-vermilion-dark ring-2 ring-vermilion/50 animate-pulse'
-                        : 'bg-cobalt text-white hover:bg-cobalt-dark shadow-cobalt/30'
-                    }`}
-                  >
-                    <Zap className="w-4 h-4" />
-                    <span>
-                      {activeCorridor.policeClearanceActive ? 'Police Clearance Active' : 'Request Traffic Signal Override'}
-                    </span>
-                  </button>
+                  {isMedicalStaff ? (
+                    <div
+                      className={`flex items-center space-x-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider ${
+                        activeCorridor.policeClearanceActive
+                          ? 'bg-cobalt/20 text-cobalt border border-cobalt/50'
+                          : 'bg-bottle-950 text-bone-300 border border-bottle-700'
+                      }`}
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>
+                        {activeCorridor.policeClearanceActive ? 'Police Clearance Active (Traffic Signal Priority)' : 'Police Clearance Inactive (Standby)'}
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        if (!activeCorridor.policeClearanceActive) {
+                          togglePoliceClearance(activeCorridor.id);
+                        }
+                      }}
+                      disabled={activeCorridor.policeClearanceActive}
+                      className={`flex items-center space-x-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-xl ${
+                        activeCorridor.policeClearanceActive
+                          ? 'bg-vermilion text-bone-50 ring-2 ring-vermilion/50 cursor-default'
+                          : 'bg-cobalt text-white hover:bg-cobalt-dark shadow-cobalt/30'
+                      }`}
+                    >
+                      <Zap className="w-4 h-4" />
+                      <span>
+                        {activeCorridor.policeClearanceActive ? 'Police Clearance Active (Locked Until Delivery)' : 'Request Traffic Signal Override'}
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -432,19 +466,24 @@ export const CorridorMap: React.FC = () => {
                 </div>
               </div>
 
-              {/* Top-Right Overlay: Corridor Quick Toggle Action */}
+              {/* Top-Right Overlay: Corridor Quick Toggle Action (Locked active until delivery) */}
               <div className="absolute top-4 right-4">
                 <button
-                  onClick={() => togglePoliceClearance(activeCorridor.id)}
+                  onClick={() => {
+                    if (!activeCorridor.policeClearanceActive) {
+                      togglePoliceClearance(activeCorridor.id);
+                    }
+                  }}
+                  disabled={activeCorridor.policeClearanceActive}
                   className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-xl ${
                     activeCorridor.policeClearanceActive
-                      ? 'bg-vermilion text-bone-50 hover:bg-vermilion-dark ring-2 ring-vermilion/50 animate-pulse'
+                      ? 'bg-vermilion text-bone-50 ring-2 ring-vermilion/50 cursor-default'
                       : 'bg-bottle-700 text-bone-100 hover:bg-bottle-600 border border-bottle-500'
                   }`}
                 >
                   <Zap className="w-4 h-4" />
                   <span>
-                    {activeCorridor.policeClearanceActive ? 'Police Clearance Active' : 'Request Traffic Clearance'}
+                    {activeCorridor.policeClearanceActive ? 'Police Clearance Active (Locked Until Delivery)' : 'Request Traffic Clearance'}
                   </span>
                 </button>
               </div>

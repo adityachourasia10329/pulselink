@@ -70,6 +70,11 @@ export const Sidebar: React.FC = () => {
   const pendingAllocations = allocationConsole.filter(a => a.officerApprovalStatus === 'PENDING').length;
   const activeCorridorCount = corridors.filter(c => c.policeClearanceActive).length;
 
+  // Item 5: The tabs which reside inside the website should not be visible to someone who is on the login page
+  if (!isGateApproved || viewMode === 'login') {
+    return null;
+  }
+
   return (
     <>
       {/* 
@@ -538,11 +543,7 @@ export const Sidebar: React.FC = () => {
         <div className="p-3 border-t border-bottle-800 bg-bottle-950 shrink-0 space-y-2">
           <button
             onClick={() => setViewMode('login')}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-mono transition-all border ${
-              viewMode === 'login'
-                ? 'bg-cobalt/20 border-cobalt text-bone-100 ring-1 ring-cobalt'
-                : 'bg-bottle-900/80 border-bottle-700 text-bone-300 hover:text-bone-100 hover:border-bottle-600'
-            }`}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-mono transition-all border bg-bottle-900/80 border-bottle-700 text-bone-300 hover:text-bone-100 hover:border-bottle-600"
           >
             <div className="flex items-center space-x-2">
               <ShieldCheck className="w-4 h-4 text-sage" />

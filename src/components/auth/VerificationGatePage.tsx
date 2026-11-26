@@ -22,7 +22,6 @@ import {
 
 export const VerificationGatePage: React.FC = () => {
   const { 
-    verificationUser, 
     gateStatus,
     gateGuardError,
     submitIntake,
@@ -30,30 +29,20 @@ export const VerificationGatePage: React.FC = () => {
     resetGateToIntake
   } = usePulseLink();
 
-  // Load initial state from localStorage on this device or context
+  // Do NOT auto-fill details on initial visit or reload — form starts completely blank
+  // until the user explicitly clicks a saved preset profile on this device.
   const getInitialState = (): VerificationUserData => {
-    try {
-      const saved = localStorage.getItem('pulselink_verification_gate');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') return parsed;
-      }
-    } catch {
-      // ignore
-    }
-    return (
-      verificationUser || {
-        fullName: 'aditya chourasia',
-        email: 'aditya.chourasia10329@gmail.com',
-        workOrganisation: 'manipal hospital',
-        city: 'Bengaluru',
-        userCategory: 'medical_staff',
-        purposeOfVisit: 'requesting',
-        phoneWhatsapp: '9313264332',
-        isPulseLinkEmployee: false,
-        verifiedAt: new Date().toISOString()
-      }
-    );
+    return {
+      fullName: '',
+      email: '',
+      workOrganisation: '',
+      city: '',
+      userCategory: '' as UserCategory,
+      purposeOfVisit: '' as PurposeOfVisit,
+      phoneWhatsapp: '',
+      isPulseLinkEmployee: undefined,
+      verifiedAt: ''
+    };
   };
 
   const initial = getInitialState();
@@ -62,9 +51,9 @@ export const VerificationGatePage: React.FC = () => {
   const [phone, setPhone] = useState(initial.phoneWhatsapp || '');
   const [email, setEmail] = useState(initial.email || '');
   const [workOrganisation, setWorkOrganisation] = useState(initial.workOrganisation || '');
-  const [city, setCity] = useState(initial.city || 'Bengaluru');
-  const [userCategory, setUserCategory] = useState<UserCategory>(initial.userCategory || 'medical_staff');
-  const [purposeOfVisit, setPurposeOfVisit] = useState<PurposeOfVisit>(initial.purposeOfVisit || 'requesting');
+  const [city, setCity] = useState(initial.city || '');
+  const [userCategory, setUserCategory] = useState<UserCategory | ''>(initial.userCategory || '');
+  const [purposeOfVisit, setPurposeOfVisit] = useState<PurposeOfVisit | ''>(initial.purposeOfVisit || '');
   const [isPulseLinkEmployee, setIsPulseLinkEmployee] = useState<boolean | null>(
     typeof initial.isPulseLinkEmployee === 'boolean' ? initial.isPulseLinkEmployee : null
   );
@@ -92,8 +81,8 @@ export const VerificationGatePage: React.FC = () => {
       workOrganisation,
       city,
       phoneWhatsapp: phone,
-      userCategory,
-      purposeOfVisit,
+      userCategory: userCategory || 'patient_or_family' as UserCategory,
+      purposeOfVisit: purposeOfVisit || 'requesting' as PurposeOfVisit,
       isPulseLinkEmployee: isPulseLinkEmployee ?? false,
       verifiedAt: new Date().toISOString()
     };
@@ -159,8 +148,8 @@ export const VerificationGatePage: React.FC = () => {
       email: email.trim() || 'contact@pulselink.in',
       workOrganisation: workOrganisation.trim() || (isPulseLinkEmployee ? 'PulseLink Core Logistics' : 'Independent Network'),
       city: city.trim() || 'Bengaluru',
-      userCategory,
-      purposeOfVisit,
+      userCategory: userCategory || 'patient_or_family' as UserCategory,
+      purposeOfVisit: purposeOfVisit || 'requesting' as PurposeOfVisit,
       phoneWhatsapp: phone.trim(),
       isPulseLinkEmployee: isPulseLinkEmployee ?? false,
       verifiedAt: new Date().toISOString()
@@ -381,7 +370,8 @@ export const VerificationGatePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Allowed & Restricted Permissions Box */}
+            {/* Allowed & Restricted Permissions Box — Only visible to Gov Employee and PulseLink Employee */}
+            {(userCategory === 'gov_employee' || (userCategory === 'other' && isPulseLinkEmployee === true)) && (
             <div className="p-4 rounded-xl bg-bottle-950 border border-bottle-800 space-y-3">
               <div>
                 <span className="text-[11px] font-mono text-sage uppercase font-bold tracking-wider block mb-1">
@@ -407,6 +397,7 @@ export const VerificationGatePage: React.FC = () => {
                 </div>
               )}
             </div>
+            )}
 
             {/* Enter Button */}
             <div className="pt-2 space-y-2">
@@ -503,7 +494,7 @@ export const VerificationGatePage: React.FC = () => {
                       onClick={() => handleSelectCategory(opt.id as UserCategory)}
                       className={`px-4 py-2 rounded-full text-xs transition-all ${
                         isSelected
-                          ? 'bg-bone-50 text-bottle-950 font-bold shadow-md scale-[1.02]'
+                          ? 'bg-black text-white font-bold shadow-lg scale-[1.02] border-2 border-white ring-2 ring-black/50'
                           : 'bg-bottle-950 border border-bottle-700 text-bone-300 hover:border-bottle-600 hover:text-bone-100'
                       }`}
                     >
@@ -648,7 +639,7 @@ export const VerificationGatePage: React.FC = () => {
                       onClick={() => setPurposeOfVisit(opt.id as PurposeOfVisit)}
                       className={`px-4 py-2 rounded-full text-xs transition-all ${
                         isSelected
-                          ? 'bg-bone-50 text-bottle-950 font-bold shadow-md scale-[1.02]'
+                          ? 'bg-black text-white font-bold shadow-lg scale-[1.02] border-2 border-white ring-2 ring-black/50'
                           : 'bg-bottle-950 border border-bottle-700 text-bone-300 hover:border-bottle-600 hover:text-bone-100'
                       }`}
                     >
